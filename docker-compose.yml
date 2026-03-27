@@ -1,0 +1,34 @@
+services:
+  # O Cérebro (Orquestrador de tarefas agendadas)
+  siaa_brain:
+    build: .
+    restart: always
+    env_file: .env
+    volumes:
+      - .:/app
+    command: python main.py
+
+  # Servidor de Webhooks (Recebimento de sinais externos)
+  siaa_webhooks:
+    build: .
+    restart: always
+    env_file: .env
+    ports:
+      - "6000:6000"
+    volumes:
+      - .:/app
+    command: uvicorn app.webhook_server:app --host 0.0.0.0 --port 6000
+
+  # Painel de Controle (Dashboard Streamlit)
+  siaa_dashboard:
+    build: .
+    restart: always
+    env_file: .env
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    command: streamlit run app/dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+
+volumes:
+  siaa_db:
