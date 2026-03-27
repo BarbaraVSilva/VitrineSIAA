@@ -1,0 +1,21 @@
+{
+  "cores": {
+    "primaria": "#ff5722",
+    "secundaria": "#212121",
+    "fundo": "#f5f5f5",
+    "texto": "#ffffff"
+  },
+  "logotipo": "Shopee Radar VIP",
+  "modo_campanha": {
+    "ativo": false,
+    "titulo": "🔥 SALDÃO RELÂMPAGO SHOPEE 🔥",
+    "descricao": "Os maiores cupons do ano acabaram de ser liberados. Aproveite agora!",
+    "dias_de_evento": ["11-11", "07-07", "03-03", "23-03"]
+  },
+  "colecoes": [
+    {
+      "nome": "Minha Coleção Shopee Completa",
+      "url": "https://mycollection.shop/SEULINKAQUI"
+    }
+  ]
+}

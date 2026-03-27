@@ -1,0 +1,15 @@
+# Requisitos Básicos (SIAA-2026)
+Telethon
+moviepy
+edge-tts
+python-dotenv
+streamlit
+selenium
+requests
+pillow
+bs4
+sqlalchemy
+pytest
+schedule
+fastapi
+uvicorn
