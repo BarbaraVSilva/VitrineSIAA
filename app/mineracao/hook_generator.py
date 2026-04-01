@@ -1,22 +1,23 @@
 import os
 import json
-from openai import OpenAI
+import google.generativeai as genai
 from dotenv import load_dotenv
+from app.core.logger import log_event
 
 load_dotenv()
 
 def generate_hooks(product_name: str, product_desc: str, price: str = "com desconto") -> list[dict]:
     """
-    Given an affiliate product, generates 5 distinct marketing hooks 
-    (Pain, Benefit, Price, Curiosity, FOMO).
-    Returns a list of dictionaries with keys: angle, hook_text, call_to_action
+    Usa o Google Gemini para gerar 5 ganchos de marketing persuasivos.
+    Implementa proteção básica contra alucinação comparando a saída com os dados originais.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("[AVISO] OPENAI_API_KEY não definida. Usando ganchos genéricos.")
+        log_event("GEMINI_API_KEY não definida no .env. Recaindo para ganchos genéricos.", component="HookGenerator", status="WARNING")
         return _fallback_hooks(product_name)
         
-    client = OpenAI(api_key=api_key)
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""
 Você é um especialista em Marketing de Vídeos Curtos para TikTok, Reels e Shorts.
@@ -32,7 +33,7 @@ Quero exatamente 5 Ângulos:
 4. Curiosidade (Gere intriga sobre o funcionamento ou resultado)
 5. FOMO (Medo de ficar de fora, urgência)
 
-Responda SOMENTE em JSON válido com essa exata estrutura (mínimo de texto possível, direto e persuasivo):
+Responda APENAS um JSON válido. Não inclua Markdown ou blocos de código. Estrutura:
 [
   {{ "angle": "Dor", "hook_text": "Cansada de [...] ?", "call_to_action": "Comenta QUERO pra garantir..." }},
   ...
@@ -40,23 +41,34 @@ Responda SOMENTE em JSON válido com essa exata estrutura (mínimo de texto poss
 """
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=600
-        )
-        content = response.choices[0].message.content.strip()
+        response = model.generate_content(prompt)
+        content = response.text.strip()
         
+        # Limpa possíveis blocos de código markdown que o Gemini possa retornar
         if content.startswith("```json"):
-            content = content[7:-3]
+            content = content.replace("```json", "", 1).replace("```", "", 1).strip()
         elif content.startswith("```"):
-            content = content[3:-3]
+            content = content.replace("```", "", 2).strip()
             
         hooks = json.loads(content)
-        return hooks
+        
+        # Proteção contra Alucinação: Validar se o nome do produto ou termos chave estão presentes
+        # (Se a IA inventar um produto totalmente diferente, recai para o fallback)
+        validated_hooks = []
+        key_terms = product_name.lower().split()[:2] # Pega as primeiras 2 palavras como termos chave
+        
+        for hook in hooks:
+            text = hook.get("hook_text", "").lower()
+            # Se for um gancho muito genérico que não cita nada do produto, marcamos para revisão
+            if not any(term in text for term in key_terms) and hook["angle"] != "Curiosidade":
+                 hook["hook_text"] = f"[VALIDAÇÃO REQUERIDA] {hook['hook_text']}"
+            validated_hooks.append(hook)
+            
+        log_event(f"Ganchos gerados com sucesso para: {product_name}", component="HookGenerator", event="IA_GENERATE", status="SUCCESS")
+        return validated_hooks
+        
     except Exception as e:
-        print(f"[ERRO AO GERAR GANCHOS IA] {e}")
+        log_event(f"Erro ao gerar ganchos com Gemini: {str(e)}", component="HookGenerator", event="IA_GENERATE", status="ERROR", level=40)
         return _fallback_hooks(product_name)
 
 def _fallback_hooks(product_name: str) -> list[dict]:
@@ -69,4 +81,6 @@ def _fallback_hooks(product_name: str) -> list[dict]:
     ]
 
 if __name__ == "__main__":
-    print(json.dumps(generate_hooks("Organizador de Cabos Magnético", "Organizador feito de silicone magnético para grudar fios na mesa sem bagunça", "R$ 15,90"), indent=4, ensure_ascii=False))
+    # Teste rápido
+    res = generate_hooks("Luminária Astronauta", "Projetor de galáxia com controle remoto e 8 modos de nebulosa")
+    print(json.dumps(res, indent=4, ensure_ascii=False))

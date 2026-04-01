@@ -1,6 +1,6 @@
 import sqlite3
 from typing import List, Optional, Dict, Any
-from app.core.database import get_connection
+from app.core.database import get_connection, retry_on_lock
 
 class BaseRepository:
     def __init__(self):
@@ -19,6 +19,7 @@ class BaseRepository:
             conn.close()
 
 class AchadosRepository(BaseRepository):
+    @retry_on_lock()
     def add_achado(self, texto: str, midia: str, link: str, status: str = 'PENDING', categoria: str = 'Geral') -> int:
         query = """
             INSERT INTO achados (texto_original, midia_path, link_original, status, categoria) 
@@ -32,6 +33,7 @@ class AchadosRepository(BaseRepository):
         # Convert to list of dicts for easier use in business logic
         return [self._row_to_dict(row) for row in rows]
 
+    @retry_on_lock()
     def update_status(self, id: int, status: str):
         query = "UPDATE achados SET status = ? WHERE id = ?"
         self._execute_query(query, (status, id), commit=True)
@@ -50,6 +52,7 @@ class AchadosRepository(BaseRepository):
         }
 
 class ProdutosRepository(BaseRepository):
+    @retry_on_lock()
     def add_produto(self, achado_id: int, link_afiliado: str, nome: str, categoria: str = 'Geral'):
         query = """
             INSERT INTO produtos (achado_id, link_afiliado, nome_produto, categoria) 

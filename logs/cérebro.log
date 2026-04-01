@@ -1,0 +1,36 @@
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'

@@ -2,6 +2,8 @@ import requests
 import sqlite3
 from app.core.database import get_connection
 from app.core.telegram_logs import send_admin_log
+from app.core.logger import log_event
+import datetime
 
 def check_link_health(link):
     """
@@ -66,9 +68,13 @@ def verify_all_active_products():
             else:
                 c.execute("UPDATE produtos SET estoque_ok = 0 WHERE id = ?", (prod_id,))
                 msg = f"🚨 **ALERTA MÁXIMO:**\nO produto **{nome_produto}** secou! Todos os links reserva falharam e ele foi retirado da Vitrine."
+                log_event(f"Produto {prod_id} retirado da vitrine (esgotado)", component="HealthCheck", status="CRITICAL")
                 print(f"   [FALHA] Todos Reservas falharam! Ocultando o Produto da Vitrine Definitivamente.")
                 send_admin_log(msg)
                 modificou_base = True
+        
+        # Atualiza o timestamp de última verificação
+        c.execute("UPDATE produtos SET last_checked = CURRENT_TIMESTAMP WHERE id = ?", (prod_id,))
                 
     conn.commit()
     conn.close()

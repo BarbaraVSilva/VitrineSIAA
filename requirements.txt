@@ -13,3 +13,5 @@ pytest
 schedule
 fastapi
 uvicorn
+google-generativeai
+pydantic

@@ -51,10 +51,11 @@ def extract_links(text):
 
 @client.on(events.NewMessage(chats=TARGET_CHANNELS))
 async def new_message_handler(event):
-    message = event.message
-    text = message.message
+    # 1. Sanitize text (remove HTML and excess whitespace)
+    import html
+    text = html.escape(text).strip() if text else ""
     
-    # 1. Extrair os Links para a Shopee do corpo do texto
+    # 2. Extrair os Links para a Shopee do corpo do texto
     shopee_links = extract_links(text)
     
     # 2. Baixar as Mídias
@@ -91,16 +92,22 @@ async def new_message_handler(event):
         
         # Salva no banco de dados para a triagem do app.py
         try:
+            status = 'PENDING' if primeiro_link else 'MISSING_LINK'
             conn = get_connection()
             c = conn.cursor()
             c.execute(
-                "INSERT INTO achados (texto_original, midia_path, cover_path, link_original, link_backup_1, link_backup_2, status) VALUES (?, ?, ?, ?, ?, ?, 'PENDING')",
-                (text, media_path, frame_foto, primeiro_link, b1, b2)
+                "INSERT INTO achados (texto_original, midia_path, cover_path, link_original, link_backup_1, link_backup_2, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (text, media_path, frame_foto, primeiro_link, b1, b2, status)
             )
             conn.commit()
             conn.close()
-            print("=> Salvo no banco de dados com sucesso! Aguardando aprovação no Streamlit.")
+            
+            from app.core.logger import log_event
+            log_event(f"Novo achado capturado ({status}): {primeiro_link}", component="CrawlerTelegram", event="MSG_CAPTURE", status="SUCCESS")
+            print(f"=> Salvo no banco com status {status}! Aguardando aprovação no Streamlit.")
         except Exception as e:
+            from app.core.logger import log_event
+            log_event(f"Erro ao salvar no banco: {str(e)}", component="CrawlerTelegram", event="DB_INSERT", status="ERROR", level=40)
             print(f"=> Erro ao salvar no banco: {e}")
 
 async def main():

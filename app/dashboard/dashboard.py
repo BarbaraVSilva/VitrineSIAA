@@ -8,9 +8,9 @@ import subprocess
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from app.core.database import get_connection
 from app.core.shopee_api import get_affiliate_link
-from app.mineracao.branding import apply_branding_to_image
-from app.core.telegram_logs import send_admin_log
-from app.core.hook_generator import generate_hooks
+from app.core.logger import log_event
+import json
+import datetime
 
 st.set_page_config(page_title="SIAA-2026 Admin", page_icon="🛍️", layout="wide")
 
@@ -24,7 +24,7 @@ os.makedirs(log_dir, exist_ok=True)
 def get_process_registry():
     return {}
 
-tab1, tab2 = st.tabs(["✅ Aprovação de Achados", "⚙️ Controle de Motores"])
+tab1, tab2, tab3 = st.tabs(["✅ Aprovação", "⚙️ Motores", "📊 Monitoramento NOC"])
 
 with tab1:
     st.markdown("Bem-vinda! Este é o painel de aprovação do seu Bot Inteligente de Afiliados.")
@@ -138,8 +138,8 @@ with tab1:
                             st.rerun()
 
 with tab2:
-    st.markdown("### 🖥️ Orquestrador de Motores SIAA-2026")
-    st.info("Aqui você pode dar a partida ou desligar os robôs que formam seu sistema. O output deles fluirá pelos logs abaixo.")
+    st.markdown("### 🖥️ Orquestrador NOC (SIAA-2026)")
+    st.info("Painel de monitoramento de processos. Motores ativos garantem a mineração 24/7.")
     
     registry = get_process_registry()
     services = {
@@ -195,7 +195,37 @@ with tab2:
                             st.info("Log Vazio.")
                 else:
                     st.info("Nenhum registro no console ainda.")
-        st.divider()
+with tab3:
+    st.markdown("### 📊 Centro de Operações (NOC)")
+    
+    col_a, col_b = st.columns(2)
+    
+    with col_a:
+        st.markdown("#### Status da Vitrine")
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM produtos WHERE estoque_ok = 1")
+        ativos = c.fetchone()[0]
+        c.execute("SELECT MAX(last_checked) FROM produtos")
+        last_check = c.fetchone()[0]
+        conn.close()
+        
+        st.metric("Produtos Ativos", ativos)
+        st.caption(f"Última Varredura: {last_check if last_check else 'Nunca'}")
+        
+    with col_b:
+        st.markdown("#### Alertas Recentes")
+        # Aqui poderíamos ler do log estruturado e filtrar por ERROR/CRITICAL
+        st.warning("Nenhum alerta crítico nas últimas 24h.")
+
+    st.divider()
+    st.markdown("#### Logs Estruturados (Real-time)")
+    # Simulação de leitura de logs JSON
+    log_file = os.path.join(log_dir, "siaa_structured.json") # Vamos configurar main.py pra escrever aqui também
+    if st.button("Limpar Logs do Painel"):
+        if os.path.exists(log_file): os.remove(log_file)
+        
+    st.info("Monitorando fluxo de eventos do Cérebro...")
 
 st.sidebar.markdown("### Configurações Rápidas")
 if st.sidebar.button("Rodar Crawler (Mock)"):

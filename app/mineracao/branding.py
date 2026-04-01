@@ -1,3 +1,5 @@
+from app.core.logger import log_event
+import logging
 import os
 import json
 from PIL import Image, ImageDraw, ImageFont
@@ -7,17 +9,26 @@ THEME_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../them
 
 def load_theme():
     if os.path.exists(THEME_PATH):
-        with open(THEME_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        try:
+            with open(THEME_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
     # Fallback default
     return {"cores": {"primaria": "#ff5722"}}
 
 def apply_branding_to_image(image_path, text_overlay="ACHADINHO DA VEZ"):
     """
-    Pega uma foto (seja do telegram ou da extração do vídeo), e aplica a identidade 
-    visual (borda ou tarja) via biblioteca Pillow para chamar atenção no Feed do Insta.
+    Pega uma foto (suporta .jpg, .png, .webp, .jfif), e aplica a identidade 
+    visual (borda ou tarja) via biblioteca Pillow.
     """
     if not image_path or not os.path.exists(image_path):
+        return image_path
+        
+    # Validar extensão
+    ext = os.path.splitext(image_path)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png', '.webp', '.jfif']:
+        log_event(f"Formato de imagem não suportado para branding: {ext}", component="BrandingEngine", status="WARNING")
         return image_path
         
     theme = load_theme()
@@ -56,12 +67,12 @@ def apply_branding_to_image(image_path, text_overlay="ACHADINHO DA VEZ"):
         drawing.text((text_x, text_y), text_overlay, fill="white", font=font)
         
         # Salva o novo resultado por cima do antigo ou arquivo novo
-        out_path = image_path.replace(".jpg", "_branding.jpg").replace(".png", "_branding.png")
+        out_path = image_path.replace(ext, f"_branding{ext}")
         img.convert("RGB").save(out_path, quality=95)
         
-        print(f"[BRANDING] Arte convertida e aprimorada com sucesso: {out_path}")
+        log_event(f"Branding aplicado com sucesso: {out_path}", component="BrandingEngine", status="SUCCESS")
         return out_path
         
     except Exception as e:
-        print(f"[BRANDING] Falha ao processar design Pillow na imagem: {e}")
+        log_event(f"Falha ao processar design Pillow: {str(e)}", component="BrandingEngine", status="ERROR", level=logging.ERROR)
         return image_path

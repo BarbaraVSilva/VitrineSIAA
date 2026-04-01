@@ -1,34 +1,44 @@
-services:
-  # O Cérebro (Orquestrador de tarefas agendadas)
-  siaa_brain:
-    build: .
-    restart: always
-    env_file: .env
-    volumes:
-      - .:/app
-    command: python main.py
+version: '3.8'
 
-  # Servidor de Webhooks (Recebimento de sinais externos)
-  siaa_webhooks:
+services:
+  # Cérebro (Orquestrador, Publicador e HealthCheck)
+  cerebro:
     build: .
-    restart: always
+    command: python main.py
+    volumes:
+      - ./data:/app/data
+      - ./downloads:/app/downloads
+      - ./logs:/app/logs
     env_file: .env
+    restart: always
+
+  # Servidor de Webhooks (FastAPI)
+  webhook:
+    build: .
+    command: uvicorn app.webhook_server:app --host 0.0.0.0 --port 6000
     ports:
       - "6000:6000"
     volumes:
-      - .:/app
-    command: uvicorn app.webhook_server:app --host 0.0.0.0 --port 6000
-
-  # Painel de Controle (Dashboard Streamlit)
-  siaa_dashboard:
-    build: .
-    restart: always
+      - ./data:/app/data
+      - ./logs:/app/logs
     env_file: .env
+    restart: always
+
+  # Dashboard de Triagem (Streamlit)
+  dashboard:
+    build: .
+    command: streamlit run app/dashboard/app.py --server.port=8501 --server.address=0.0.0.0
     ports:
       - "8501:8501"
     volumes:
-      - .:/app
-    command: streamlit run app/dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./downloads:/app/downloads
+    env_file: .env
+    restart: always
 
+# Volumes para persistência local
 volumes:
-  siaa_db:
+  data:
+  logs:
+  downloads:

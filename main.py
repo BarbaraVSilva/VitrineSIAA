@@ -10,6 +10,8 @@ from app.publisher.update_vitrine import generate_html_vitrine
 from app.core.database import init_db, get_connection
 from app.social_interactions.instagram_bot import run_social_interactions
 from app.publisher.shopee_video import publish_to_shopee_video
+from app.core.logger import log_event
+import logging
 
 load_dotenv()
 
@@ -71,9 +73,9 @@ def job_shopee_video():
     conn.close()
 
 def run_scheduler():
-    if not os.path.exists("db_siaa.sqlite"):
-        print("[SISTEMA] Banco não existe, criando do zero...")
-        init_db()
+    # Garante que as pastas e banco existam antes de qualquer Job
+    init_db()
+    log_event("Cérebro SIAA-2026 Inicializado", component="Main", event="SYSTEM_START", status="SUCCESS")
 
     post_times = os.getenv("POST_SCHEDULE_TIMES", "12:00,18:00,21:00").split(",")
     
