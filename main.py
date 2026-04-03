@@ -8,7 +8,7 @@ from app.publisher.auto_post import run_publisher
 from app.core.health_check import verify_all_active_products
 from app.publisher.update_vitrine import generate_html_vitrine
 from app.core.database import init_db, get_connection
-from app.social_interactions.instagram_bot import run_social_interactions
+# Nota: instagram_bot.py agora é servidor FastAPI independente lançado pelo .bat
 from app.publisher.shopee_video import publish_to_shopee_video
 from app.core.logger import log_event
 import logging
@@ -19,6 +19,21 @@ def job_postagem_pico():
     print(f"\n[CRON] {time.strftime('%H:%M:%S')} - Iniciando Job de Publicação! Olhando a fila de aprovados...")
     run_publisher()
 
+def cleanup_downloads():
+    print(f"\n[CRON] {time.strftime('%H:%M:%S')} - Iniciando Limpeza de Mídias Antigas (> 3 dias)...")
+    import glob
+    now = time.time()
+    count = 0
+    if os.path.exists("downloads"):
+        for f in glob.glob("downloads/*"):
+            if os.path.isfile(f) and os.stat(f).st_mtime < now - 3 * 86400:
+                try:
+                    os.remove(f)
+                    count += 1
+                except:
+                    pass
+    print(f"[*] Limpeza concluída: {count} arquivos antigos deletados.")
+
 def job_healthcheck():
     print(f"\n[CRON] {time.strftime('%H:%M:%S')} - Iniciando Check Médico de Estoque e Links Quebrados...")
     houve_modificacoes_vitrine = verify_all_active_products()
@@ -26,9 +41,7 @@ def job_healthcheck():
         print("[CRON] Algum produto esgotou ou quebrou! Renderizando o HTML novo para proteger do Shadowban...")
         generate_html_vitrine()
 
-def job_social():
-    run_social_interactions()
-    
+
 def job_shopee_video():
     """Puxa do banco achados (itens aprovados, em formato de vídeo) e posta."""
     print(f"\n[CRON] {time.strftime('%H:%M:%S')} - Iniciando Auto-postagem Shopee Video...")
@@ -88,16 +101,19 @@ def run_scheduler():
     schedule.every(4).hours.do(job_healthcheck)
     print("[*] Verificador de Estoque Shopee (HealthCheck) programado a cada: 4 horas")
     
-    # 3. Registra o Bot de Comentários do Instagram
-    schedule.every(15).minutes.do(job_social)
-    print("[*] Bot de Resposta Meta/Instagram programado a cada: 15 minutos")
+    # 3. Auto-DM Bot roda como servidor FastAPI separado via .bat
+    # schedule.every(15).minutes.do(job_social) <-- Substituído pelo Webhook em app/social_interactions/instagram_bot.py
     
     # 4. Registra Auto-postagem do Shopee Video (ex: a cada 2 horas)
     schedule.every(2).hours.do(job_shopee_video)
     print("[*] Bot de Upload p/ Shopee Video programado a cada: 2 horas")
     
+    # 5. Rotina de limpeza da pasta de Downloads (lixo de scraper)
+    schedule.every().day.at("03:00").do(cleanup_downloads)
+    print("[*] Faxina do Sistema programada para Diariamente às: 03:00")
+    
     print("\n" + "="*50)
-    print("🤖 O CÉREBRO SIAA-2026 ESTÁ ONLINE E ORQUESTRANDO TUDO 🤖")
+    print("** O CÉREBRO SIAA-2026 ESTÁ ONLINE E ORQUESTRANDO TUDO **")
     print("="*50)
     print("Nota: O Telegram Crawler e o Streamlit Dashboard rodam em processos separados!")
     print("\n[Inicialização] Gerando A Primeira Vitrine...")

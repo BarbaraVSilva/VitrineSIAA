@@ -1,10 +1,9 @@
-# Requisitos Básicos (SIAA-2026)
+# Requisitos SIAA-2026 (Atualizado)
 Telethon
 moviepy
 edge-tts
 python-dotenv
 streamlit
-selenium
 requests
 pillow
 bs4
@@ -15,3 +14,5 @@ fastapi
 uvicorn
 google-generativeai
 pydantic
+playwright
+openai

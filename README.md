@@ -34,17 +34,23 @@ O sistema opera como um hub central ("Cérebro") que controla diversos motores:
 - SQLite3
 - Instalar dependências: `pip install -r requirements.txt`
 
-### Inicialização
+### Inicialização Simplificada
 1.  Configure as variáveis no `.env` (API Keys da Shopee, Meta, Telegram e Gemini).
-2.  Inicie o cérebro central:
-    ```bash
-    python main.py
-    ```
-3.  Acesse o Dashboard de Triagem:
-    ```bash
-    streamlit run app/dashboard/app.py
-    ```
-4.  O Webhook Server rodará na **Porta 6000** (Padronizada).
+2.  Dê dois cliques no arquivo **`iniciar_siaa.bat`** na pasta raiz. Ele abrirá automaticamente e simultaneamente:
+    - O Cérebro (Agendador Main)
+    - O Crawler do Telegram
+    - O Dashboard de Triagem
+    - O Servidor Webhook
+
+### 🚀 Primeiro Uso (Passo a Passo)
+
+1. **Acessar o Dashboard:** Após rodar o `.bat`, o sistema estará disponível no seu navegador pelo endereço: `http://localhost:8501`.
+2. **Triagem de "Achadinhos":** Na aba "✅ Aprovação", expanda as caixas para ver as ofertas em vídeo/foto mineradas pelo Crawler. *(Dica: Utilize o botão "Rodar Crawler (Mock)" no menu lateral se quiser testar de imediato sem esperar o Telegram).*
+3. **Magia da IA (Ganchos):** Clique no botão **"✨ Sugerir Ganchos Virais (IA)"**. O sistema usará o Gemini para ler o conteúdo cru e retornar ideias de legendas comerciais persuasivas.
+4. **Aprovação e Conversão:** Copie o gancho que gostar para o campo de legenda, determine um Título Curto e aperte **"✅ Aprovar"**. 
+    - *Under the hood:* Neste momento o sistema puxa o link cru e o submete à API da Shopee para gerar e salvar seu Link Oficial de Afiliada.
+5. **Atualizando a Vitrine:** Aperte o botão azul `"Atualizar Vitrine (HTML)"` no menu lateral esquedo para exportar o item aprovado para o seu site no Github Pages.
+6. **Agendamento Robótico:** O seu trabalho terminou! O "Cérebro" monitorará o relógio e efetuará as postagens finais daquele produto nas suas redes sociais sozinho no próximo Horário de Pico (12h, 18h, 21h).
 
 ---
 

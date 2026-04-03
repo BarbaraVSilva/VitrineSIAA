@@ -1,2 +1,119 @@
 Iniciando o Crawler. Monitorando os canais/grupos: @viralizandoshopee, @afiliadosshopeebroficial, https://t.me/+ONTihSXsnZZkOGEx, https://t.me/+mHrjybIGb5MwMTgx, https://t.me/+HchBUPp2MoZlOTAx, https://t.me/+lzzIFbROD4YxZjcx, @achadinhosshopeeafiliados
-Please enter the code you received: 
+Please enter the code you received: Server closed the connection: 0 bytes read on a total of 8 expected bytes
+Server closed the connection: 0 bytes read on a total of 8 expected bytes
+Server closed the connection: 0 bytes read on a total of 8 expected bytes
+Server closed the connection: 0 bytes read on a total of 8 expected bytes
+Server closed the connection: 0 bytes read on a total of 8 expected bytes
+Server closed the connection: 0 bytes read on a total of 8 expected bytes
+Unhandled exception from keepalive_handle after cancelling <class '_asyncio.Task'> (<Task finished name='Task-7' coro=<UpdateMethods._keepalive_loop() done, defined at C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\updates.py:485> exception=OperationalError('database is locked')>)
+Traceback (most recent call last):
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\helpers.py", line 176, in _cancel
+    await task
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\updates.py", line 521, in _keepalive_loop
+    await self._save_states_and_entities()
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\telegrambaseclient.py", line 701, in _save_states_and_entities
+    self.session.process_entities(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        types.contacts.ResolvedPeer(None, [types.InputPeerUser(0, self._mb_entity_cache.self_id)], [])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+    ~~~~~~~~~~~~~^
+        'insert or replace into entities values (?,?,?,?,?,?)', rows)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: database is locked
+Iniciando o Crawler. Monitorando os canais/grupos: @viralizandoshopee, @afiliadosshopeebroficial, https://t.me/+ONTihSXsnZZkOGEx, https://t.me/+mHrjybIGb5MwMTgx, https://t.me/+HchBUPp2MoZlOTAx, https://t.me/+lzzIFbROD4YxZjcx, @achadinhosshopeeafiliados
+Conectado! Verificando configurações de histórico...
+Aguardando novas publicações ativamente...
+Traceback (most recent call last):
+  File "C:\Python314\Lib\asyncio\runners.py", line 127, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\mineracao\crawler_telegram.py", line 147, in main
+    await client.run_until_disconnected()
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\updates.py", line 36, in _run_until_disconnected
+    result = await self.disconnected
+             ^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\mineracao\crawler_telegram.py", line 157, in <module>
+    asyncio.run(main())
+    ~~~~~~~~~~~^^^^^^^^
+  File "C:\Python314\Lib\asyncio\runners.py", line 204, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Python314\Lib\asyncio\runners.py", line 132, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+Server closed the connection: 0 bytes read on a total of 8 expected bytes
+Error executing high-level request after reconnect: <class 'sqlite3.OperationalError'>: database is locked
+Unhandled exception from keepalive_handle after cancelling <class '_asyncio.Task'> (<Task finished name='Task-7' coro=<UpdateMethods._keepalive_loop() done, defined at C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\updates.py:485> exception=OperationalError('database is locked')>)
+Traceback (most recent call last):
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\helpers.py", line 176, in _cancel
+    await task
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\updates.py", line 521, in _keepalive_loop
+    await self._save_states_and_entities()
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\telegrambaseclient.py", line 701, in _save_states_and_entities
+    self.session.process_entities(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        types.contacts.ResolvedPeer(None, [types.InputPeerUser(0, self._mb_entity_cache.self_id)], [])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+    ~~~~~~~~~~~~~^
+        'insert or replace into entities values (?,?,?,?,?,?)', rows)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: database is locked
+Iniciando o Crawler. Monitorando os canais/grupos: @viralizandoshopee, @afiliadosshopeebroficial, https://t.me/+ONTihSXsnZZkOGEx, https://t.me/+mHrjybIGb5MwMTgx, https://t.me/+HchBUPp2MoZlOTAx, https://t.me/+lzzIFbROD4YxZjcx, @achadinhosshopeeafiliados
+Conectado! Verificando configurações de histórico...
+Aguardando novas publicações ativamente...
+Traceback (most recent call last):
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\updates.py", line 36, in _run_until_disconnected
+    result = await self.disconnected
+             ^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\mineracao\crawler_telegram.py", line 157, in <module>
+    asyncio.run(main())
+    ~~~~~~~~~~~^^^^^^^^
+  File "C:\Python314\Lib\asyncio\runners.py", line 204, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Python314\Lib\asyncio\runners.py", line 127, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\mineracao\crawler_telegram.py", line 147, in main
+    await client.run_until_disconnected()
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\updates.py", line 43, in _run_until_disconnected
+    await self.disconnect()
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\telegrambaseclient.py", line 746, in _disconnect_coro
+    await self._save_states_and_entities()
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\client\telegrambaseclient.py", line 701, in _save_states_and_entities
+    self.session.process_entities(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        types.contacts.ResolvedPeer(None, [types.InputPeerUser(0, self._mb_entity_cache.self_id)], [])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Barbara\AppData\Roaming\Python\Python314\site-packages\telethon\sessions\sqlite.py", line 301, in process_entities
+    c.executemany(
+    ~~~~~~~~~~~~~^
+        'insert or replace into entities values (?,?,?,?,?,?)', rows)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: database is locked

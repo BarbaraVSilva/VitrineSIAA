@@ -16,3 +16,40 @@ INFO:     Started reloader process [14832] using StatReload
 INFO:     Started server process [3828]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Barbara\\Desktop\\Projetos\\Projeto SIAA-2026']
+INFO:     Uvicorn running on http://0.0.0.0:6000 (Press CTRL+C to quit)
+INFO:     Started reloader process [16708] using StatReload
+INFO:     Started server process [14868]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14868]
+INFO:     Started server process [17068]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app\dashboard\dashboard.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [17068]
+INFO:     Started server process [2228]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ complete.
+WARNING:  StatReload detected changes in 'app\dashboard\dashboard.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [18216]
+INFO:     Started server process [9940]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Barbara\\Desktop\\Projetos\\Projeto SIAA-2026']
+INFO:     Uvicorn running on http://0.0.0.0:6000 (Press CTRL+C to quit)
+INFO:     Started reloader process [3088] using StatReload
+INFO:     Started server process [7744]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

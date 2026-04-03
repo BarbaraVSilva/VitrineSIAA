@@ -34,3 +34,81 @@ Traceback (most recent call last):
   File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
     from playwright.sync_api import sync_playwright
 ModuleNotFoundError: No module named 'playwright'
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 12, in <module>
+    from app.publisher.shopee_video import publish_to_shopee_video
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\app\publisher\shopee_video.py", line 3, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
+Base SIAA-2026 inicializada com sucesso!
+{"timestamp": "2026-04-01T13:36:19.016605", "level": "INFO", "component": "Main", "message": "C\u00e9rebro SIAA-2026 Inicializado", "event": "SYSTEM_START", "status": "SUCCESS"}
+[*] Postagem Programada para Diariamente às: 12:00
+[*] Postagem Programada para Diariamente às: 18:00
+[*] Postagem Programada para Diariamente às: 21:00
+[*] Verificador de Estoque Shopee (HealthCheck) programado a cada: 4 horas
+[*] Bot de Resposta Meta/Instagram programado a cada: 15 minutos
+[*] Bot de Upload p/ Shopee Video programado a cada: 2 horas
+
+==================================================
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 117, in <module>
+    run_scheduler()
+    ~~~~~~~~~~~~~^^
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 100, in run_scheduler
+    print("\U0001f916 O CÉREBRO SIAA-2026 ESTÁ ONLINE E ORQUESTRANDO TUDO \U0001f916")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f916' in position 0: character maps to <undefined>
+Base SIAA-2026 inicializada com sucesso!
+{"timestamp": "2026-04-01T13:37:16.264665", "level": "INFO", "component": "Main", "message": "C\u00e9rebro SIAA-2026 Inicializado", "event": "SYSTEM_START", "status": "SUCCESS"}
+[*] Postagem Programada para Diariamente às: 12:00
+[*] Postagem Programada para Diariamente às: 18:00
+[*] Postagem Programada para Diariamente às: 21:00
+[*] Verificador de Estoque Shopee (HealthCheck) programado a cada: 4 horas
+[*] Bot de Resposta Meta/Instagram programado a cada: 15 minutos
+[*] Bot de Upload p/ Shopee Video programado a cada: 2 horas
+
+==================================================
+Traceback (most recent call last):
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 117, in <module>
+    run_scheduler()
+    ~~~~~~~~~~~~~^^
+  File "C:\Users\Barbara\Desktop\Projetos\Projeto SIAA-2026\main.py", line 100, in run_scheduler
+    print("\U0001f916 O CÉREBRO SIAA-2026 ESTÁ ONLINE E ORQUESTRANDO TUDO \U0001f916")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f916' in position 0: character maps to <undefined>
+Base SIAA-2026 inicializada com sucesso!
+{"timestamp": "2026-04-01T13:49:16.459995", "level": "INFO", "component": "Main", "message": "C\u00e9rebro SIAA-2026 Inicializado", "event": "SYSTEM_START", "status": "SUCCESS"}
+[*] Postagem Programada para Diariamente às: 12:00
+[*] Postagem Programada para Diariamente às: 18:00
+[*] Postagem Programada para Diariamente às: 21:00
+[*] Verificador de Estoque Shopee (HealthCheck) programado a cada: 4 horas
+[*] Bot de Resposta Meta/Instagram programado a cada: 15 minutos
+[*] Bot de Upload p/ Shopee Video programado a cada: 2 horas
+
+==================================================
+** O CÉREBRO SIAA-2026 ESTÁ ONLINE E ORQUESTRANDO TUDO **
+==================================================
+Nota: O Telegram Crawler e o Streamlit Dashboard rodam em processos separados!
+
+[Inicialização] Gerando A Primeira Vitrine...
+[PUBLISHER/VITRINE] Gerada com sucesso! HTML injetado com 0 produtos ativos segmentados.
+[VITRINE] Github Pages sinalizado! Pode levar 1 minuto até atualizar o site.
+[VITRINE] Git Push Ignorado (Git não instalado ou repositório não configurado localmente): 'charmap' codec can't encode character '\U0001f4e6' in position 19: character maps to <undefined>
+
+Aguardando alarmes... (Pressione Ctrl+C para desligar o relógio)
+
+Desligando sistema Mestre...
+Base SIAA-2026 inicializada com sucesso!
+{"timestamp": "2026-04-01T13:59:22.816800", "level": "INFO", "component": "Main", "message": "C\u00e9rebro SIAA-2026 Inicializado", "event": "SYSTEM_START", "status": "SUCCESS"}

@@ -19,7 +19,8 @@ def save_to_database(descricao, media_path=None):
     conn.close()
     print(f"[WHATSAPP BOT] Item salvo no banco de dados SIAA! -> {descricao[:50]}...")
 
-def run_whatsapp_crawler(target_group_name="Ofertas Vips - Teste"):
+def run_whatsapp_crawler():
+    target_group_name = os.getenv("WHATSAPP_GROUP_NAME", "Ofertas Vips - Teste")
     """
     Inicia o navegador (Chrome), abre o WhatsApp Web e aguarda o escaneamento do QR Code.
     Depois, entra em um grupo específico e monitora as últimas mensagens enviadas.

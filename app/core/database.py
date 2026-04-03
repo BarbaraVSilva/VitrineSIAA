@@ -5,11 +5,12 @@ DB_PATH = os.getenv("DB_PATH", "db_siaa.sqlite")
 
 def get_connection():
     """Retorna uma conexão bruta com o banco SQLite com otimizações de concorrência (WAL)."""
-    conn = sqlite3.connect(DB_PATH)
+    # Define o tempo de timeout global da conexão Python para 30s
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
     # Ativa o modo WAL (Write-Ahead Logging) para permitir leituras e escritas simultâneas
     conn.execute("PRAGMA journal_mode=WAL;")
-    # Define um timeout de 10s para esperar caso o banco esteja ocupado (evita database is locked imediato)
-    conn.execute("PRAGMA busy_timeout=10000;")
+    # Define um timeout na engine SQLite de 30.000ms
+    conn.execute("PRAGMA busy_timeout=30000;")
     return conn
 
 def retry_on_lock(retries=5, delay=0.5):
@@ -49,7 +50,14 @@ def init_db():
             link_backup_1 TEXT,
             link_backup_2 TEXT,
             categoria TEXT DEFAULT 'Geral',
-            status TEXT DEFAULT 'PENDING'
+            status TEXT DEFAULT 'PENDING',
+            compliance_status TEXT DEFAULT 'PENDENTE',
+            compliance_reason TEXT,
+            tipo_link TEXT DEFAULT 'PRODUTO',
+            status_fluxo TEXT DEFAULT 'Ideia',
+            legenda_instagram TEXT,
+            legenda_tiktok TEXT,
+            legenda_shopee TEXT
         )
     ''')
     
@@ -70,12 +78,68 @@ def init_db():
         )
     ''')
     
-    # Migração simples se a coluna não existir
-    try:
-        c.execute("ALTER TABLE produtos ADD COLUMN last_checked DATETIME")
-    except sqlite3.OperationalError:
-        pass # Coluna já existe
+    # Tabela 3: Log de disparos do bot Auto-DM
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS bot_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo TEXT DEFAULT 'DM',
+            user_id TEXT,
+            comment_id TEXT,
+            produto_id INTEGER,
+            palavra_gatilho TEXT,
+            resposta_enviada TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     
+    # Tabela 4: Banco de Mídias (mídias disponíveis independentes)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS media_bank (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            arquivo_path TEXT UNIQUE,
+            tipo TEXT DEFAULT 'imagem',
+            origem TEXT DEFAULT 'upload',
+            usado BOOLEAN DEFAULT 0,
+            achado_id INTEGER,
+            data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Migrações de colunas existentes
+    colunas_achados = [
+        ("cover_path", "TEXT"),
+        ("link_backup_1", "TEXT"),
+        ("link_backup_2", "TEXT"),
+        ("categoria", "TEXT"),
+        ("compliance_status", "TEXT"),
+        ("compliance_reason", "TEXT"),
+        ("tipo_link", "TEXT"),
+        ("status_fluxo", "TEXT DEFAULT 'Ideia'"),
+        ("legenda_instagram", "TEXT"),
+        ("legenda_tiktok", "TEXT"),
+        ("legenda_shopee", "TEXT"),
+    ]
+    for col, col_type in colunas_achados:
+        try:
+            c.execute(f"ALTER TABLE achados ADD COLUMN {col} {col_type}")
+        except sqlite3.OperationalError:
+            pass  # Coluna já existe
+
+    colunas_produtos = ["link_backup", "link_backup_2", "categoria", "last_checked"]
+    for col in colunas_produtos:
+        try:
+            c.execute(f"ALTER TABLE produtos ADD COLUMN {col} TEXT")
+        except sqlite3.OperationalError:
+            pass
+    
+    # Migração campanhas
+    cols_camp = [("status_publicacao", "TEXT DEFAULT 'PENDING'"), ("data_agendada", "TEXT"), ("evento", "TEXT DEFAULT 'COMUM'")]
+    for col, col_type in cols_camp:
+        try:
+            c.execute(f"ALTER TABLE produtos ADD COLUMN {col} {col_type}")
+        except sqlite3.OperationalError:
+            pass
+
     conn.commit()
     conn.close()
     print("Base SIAA-2026 inicializada com sucesso!")

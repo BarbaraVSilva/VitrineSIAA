@@ -66,12 +66,26 @@ def verify_all_active_products():
                 send_admin_log(msg)
                 modificou_base = True
             else:
-                c.execute("UPDATE produtos SET estoque_ok = 0 WHERE id = ?", (prod_id,))
-                msg = f"🚨 **ALERTA MÁXIMO:**\nO produto **{nome_produto}** secou! Todos os links reserva falharam e ele foi retirado da Vitrine."
-                log_event(f"Produto {prod_id} retirado da vitrine (esgotado)", component="HealthCheck", status="CRITICAL")
-                print(f"   [FALHA] Todos Reservas falharam! Ocultando o Produto da Vitrine Definitivamente.")
-                send_admin_log(msg)
-                modificou_base = True
+                print(f"   [FALHA] Todos Reservas falharam! Iniciando protocolo de IA (Open API) para salvar comissão...")
+                # NOVIDADE SIAA NEXT-GEN: Pesquisa automática na Base de Dados Oficial da Shopee Afiliados
+                from app.mineracao.shopee_api_client import ShopeeAffiliateAPI
+                shopee_api = ShopeeAffiliateAPI()
+                
+                novo_produto = shopee_api.search_similar_product(keyword=nome_produto)
+                if novo_produto:
+                    novo_link = shopee_api.generate_affiliate_link(novo_produto['link'])
+                    c.execute("UPDATE produtos SET link_afiliado = ?, link_backup = NULL, link_backup_2 = NULL WHERE id = ?", (novo_link, prod_id))
+                    msg = f"🔥 **SALVA-VIDAS ATIVADO:**\nO produto **{nome_produto}** secou! A Shopee API encontrou um fornecedor alternativo a tempo. O Link da vitrine foi atualizado secretamente para nossa audiência: {novo_link}"
+                    print(f"   [SUCESSO OPEN API] Salvo pelo gongo! Novo fornecedor encontrado: {novo_link}")
+                    send_admin_log(msg)
+                    modificou_base = True
+                else:
+                    c.execute("UPDATE produtos SET estoque_ok = 0 WHERE id = ?", (prod_id,))
+                    msg = f"🚨 **ALERTA MÁXIMO:**\nO arquivo original **{nome_produto}** secou. A tentativa das IAs de encontrar vendedor substituto falhou. Item ocultado da vitrine."
+                    log_event(f"Produto {prod_id} retirado da vitrine (esgotado total)", component="HealthCheck", status="CRITICAL")
+                    print(f"   [FALHA TOTAL] Ocultando o Produto da Vitrine Definitivamente.")
+                    send_admin_log(msg)
+                    modificou_base = True
         
         # Atualiza o timestamp de última verificação
         c.execute("UPDATE produtos SET last_checked = CURRENT_TIMESTAMP WHERE id = ?", (prod_id,))
