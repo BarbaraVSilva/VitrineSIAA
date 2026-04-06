@@ -42,8 +42,32 @@ def log_bot_disparo(tipo: str, user_id: str, comment_id: str, produto_id,
 
 
 def get_gatilhos_do_banco() -> list[str]:
-    """Busca palavras-gatilho configuradas no banco (futuro: tabela config)."""
+    """Busca palavras-gatilho configuradas no banco."""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT valor FROM config WHERE chave = 'trigger_words'")
+        row = c.fetchone()
+        conn.close()
+        if row:
+            return [g.strip().lower() for g in row[0].split(",")]
+    except Exception:
+        pass
     return GATILHOS_PADRAO
+
+
+def get_reply_message_do_banco() -> str:
+    """Busca a mensagem de resposta pública padronizada no banco."""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT valor FROM config WHERE chave = 'reply_message'")
+        row = c.fetchone()
+        conn.close()
+        if row: return row[0]
+    except Exception:
+        pass
+    return "Te mandei no direct! 💌"
 
 
 def detectar_gatilho(texto: str) -> str | None:
@@ -133,7 +157,7 @@ async def receive_webhook(request: Request):
                     sucesso_dm = send_private_dm(comment_id, texto_dm)
 
                     # 2. Resposta PÚBLICA curta no comentário (só gatilho)
-                    texto_publico = "Te mandei no direct! 💌"
+                    texto_publico = get_reply_message_do_banco()
                     sucesso_pub = post_public_reply(comment_id, texto_publico)
 
                     # 3. Registra no banco

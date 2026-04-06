@@ -175,7 +175,8 @@ def get_achados_por_status(status_fluxo: str):
         c.execute("""
             SELECT id, texto_original, midia_path, link_original, categoria,
                    status_fluxo, legenda_instagram, legenda_tiktok, legenda_shopee,
-                   compliance_status, status, cover_path, link_backup_1, link_backup_2
+                   compliance_status, status, cover_path, link_backup_1, link_backup_2,
+                   grupo_id, tema_grupo
             FROM achados WHERE status_fluxo = ? ORDER BY id DESC
         """, (status_fluxo,))
     except Exception:
@@ -229,6 +230,49 @@ with tab_studio:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # ── IA Grouper ──
+    with st.expander("🪄 Sugestão de Carrosséis (IA)", expanded=True):
+        col_ai1, col_ai2 = st.columns([2, 1])
+        with col_ai1:
+            st.markdown("""
+            <div style="background:rgba(167,139,250,0.05);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:12px;">
+              <p style="color:#A78BFA;font-weight:700;margin:0;font-size:0.9rem;">✨ Agrupador Inteligente</p>
+              <p style="color:#8B90A0;font-size:0.8rem;margin:4px 0 0;">O Gemini analisa seus achados pendentes e cria coleções temáticas para carrosséis.</p>
+            </div>""", unsafe_allow_html=True)
+        with col_ai2:
+            if st.button("🚀 Rodar Agrupamento IA", use_container_width=True, type="primary"):
+                with st.spinner("Analisando afinidades..."):
+                    from app.mineracao.grouper import group_achados_with_ai
+                    if group_achados_with_ai():
+                        st.success("Grupos atualizados!")
+                        st.rerun()
+                    else: st.warning("Itens insuficientes para agrupar.")
+
+    # ── Bulk Approval ──
+    conn_b = get_connection(); cb = conn_b.cursor()
+    cb.execute("SELECT DISTINCT tema_grupo, grupo_id FROM achados WHERE grupo_id IS NOT NULL AND status = 'PENDING'")
+    grupos_pendentes = cb.fetchall()
+    conn_b.close()
+
+    if grupos_pendentes:
+        with st.expander("📦 Aprovação em Lote (Carrosséis/Grupos)", expanded=False):
+            for tema, gid in grupos_pendentes:
+                c1, c2 = st.columns([3, 1])
+                c1.markdown(f"**Tema:** {tema} (`{gid}`)")
+                if c2.button(f"✅ Aprovar Tudo", key=f"bulk_{gid}", type="primary"):
+                    conn_ap = get_connection(); cap = conn_ap.cursor()
+                    cap.execute("UPDATE achados SET status='APPROVED', status_fluxo='Pronto' WHERE grupo_id=?", (gid,))
+                    # Inserir na vitrine também
+                    cap.execute("SELECT id, link_original, categoria FROM achados WHERE grupo_id=?", (gid,))
+                    for aid, link, cat in cap.fetchall():
+                        # Injeta Sub-ID para Analytics de Lote
+                        link_af = get_affiliate_link(link, sub_id=f"bulk_a{aid}_studio") if link else f"https://shope.ee/default_{aid}"
+                        cap.execute("INSERT OR IGNORE INTO produtos (achado_id,link_afiliado,nome_produto,categoria) VALUES(?,?,?,?)",
+                                   (aid, link_af, f"Oferta #{aid}", cat or "Geral"))
+                    conn_ap.commit(); conn_ap.close()
+                    st.success(f"Grupo {tema} aprovado!")
+                    st.rerun()
+
     # ── Seção de Captura ──
     st.markdown("#### 📥 Capturar Conteúdo")
     cap_col1, cap_col2 = st.columns([1, 2])
@@ -237,13 +281,13 @@ with tab_studio:
         st.markdown("""
         <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;">
           <p style="color:#FF6B35;font-weight:700;margin:0 0 8px;font-size:0.9rem;">🤖 Varredura Automática</p>
-          <p style="color:#8B90A0;font-size:0.8rem;margin:0;">Dispara o crawler do Telegram nos canais configurados.</p>
+          <p style="color:#8B90A0;font-size:0.8rem;margin:0;">Dispara o crawler do Telegram nas últimas 24h.</p>
         </div>""", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("📡 Escanear Telegram Agora", type="primary", use_container_width=True, key="btn_scan_tg"):
+        if st.button("📡 Escanear Últimas 24h", type="primary", use_container_width=True, key="btn_scan_tg_24"):
             try:
-                open(os.path.join(proj_root, ".trigger_scrape"), "w").close()
-                st.success("✅ Sinal enviado! O crawler inicia em até 5s.")
+                open(os.path.join(proj_root, ".trigger_scrape_24h"), "w").close()
+                st.success("✅ Sinal enviado (24h)! O crawler inicia em instantes.")
             except Exception as e:
                 st.error(f"Erro: {e}")
 
@@ -311,31 +355,35 @@ with tab_studio:
 
     st.divider()
 
-    # ── Kanban ──
+    # ── Kanban Multi-Coluna ──
     st.markdown("#### 🗂️ Kanban de Conteúdo")
-    etapa_filtro = st.selectbox("Filtrar por etapa:", ["Todas"] + ETAPAS, key="kanban_filtro")
-
-    etapas_exibir = ETAPAS if etapa_filtro == "Todas" else [etapa_filtro]
-
-    for etapa in etapas_exibir:
+    
+    # Criamos colunas para as etapas
+    k_cols = st.columns(len(ETAPAS))
+    
+    for i, etapa in enumerate(ETAPAS):
         cor, bg = ETAPA_COR[etapa]
         cards = get_achados_por_status(etapa)
-        st.markdown(f"""
-        <div style="background:{bg};border-left:3px solid {cor};border-radius:10px;padding:10px 16px;margin:16px 0 8px;">
-          <b style="color:{cor};">● {etapa}</b>
-          <span style="color:#8B90A0;font-size:0.8rem;margin-left:8px;">{len(cards)} conteúdo(s)</span>
-        </div>""", unsafe_allow_html=True)
+        
+        with k_cols[i]:
+            st.markdown(f"""
+            <div style="background:{bg};border-bottom:2px solid {cor};border-radius:10px 10px 0 0;padding:8px;text-align:center;margin-bottom:12px;">
+              <b style="color:{cor};font-size:0.85rem;">{etapa.upper()}</b>
+              <br><span style="color:#8B90A0;font-size:0.7rem;">{len(cards)} itens</span>
+            </div>""", unsafe_allow_html=True)
+            
+            if not cards:
+                st.markdown("<p style='color:#8B90A0;font-size:0.75rem;text-align:center;opacity:0.5;padding:20px 0;'>Vazio</p>", unsafe_allow_html=True)
+                continue
 
-        if not cards:
-            st.markdown("<p style='color:#8B90A0;font-size:0.82rem;padding:8px 16px;'>Nenhum conteúdo nesta etapa.</p>", unsafe_allow_html=True)
-            continue
-
-        for row in cards:
-            (a_id, texto, midia, link, cat, s_fluxo,
-             leg_ig, leg_tt, leg_sh, comp_st, status, cover, b1, b2) = row
-
-            titulo_card = (texto[:60] + "…") if texto and len(texto) > 60 else (texto or f"Conteúdo #{a_id}")
-            with st.expander(f"#{a_id} · {cat or 'Geral'} · {titulo_card}", expanded=False):
+            for row in cards:
+                (a_id, texto, midia, link, cat, s_fluxo,
+                 leg_ig, leg_tt, leg_sh, comp_st, status, cover, b1, b2, g_id, tema_g) = row
+                
+                tag_g = f"<div style='color:#A78BFA;font-size:0.65rem;font-weight:700;margin-top:4px;'>📦 {tema_g[:15]}…</div>" if tema_g else ""
+                titulo_compacto = (texto[:30] + "…") if texto and len(texto) > 30 else (texto or f"#{a_id}")
+                with st.expander(f"#{a_id} · {titulo_compacto}", expanded=False):
+                    if tag_g: st.markdown(tag_g, unsafe_allow_html=True)
 
                 # Stepper visual do card
                 render_stepper(s_fluxo or "Ideia")
@@ -372,15 +420,17 @@ with tab_studio:
                             except Exception as e: st.error(str(e))
 
                     if midia and not midia.endswith((".mp4",".mov")) and os.path.exists(midia):
-                        if st.button("🎨 Gerar Arte Pillow", key=f"arte2_{a_id}"):
-                            with st.spinner("Gerando arte…"):
-                                from app.publisher.card_generator import generate_feed_card
-                                arte = generate_feed_card(midia)
+                        c_p1, c_p2 = st.columns(2)
+                        st_brand = c_p1.selectbox("Estilo:", ["standard", "minimalist_glass"], key=f"st_br_{a_id}")
+                        if c_p2.button("🎨 Gerar Arte", key=f"arte2_{a_id}", use_container_width=True):
+                            with st.spinner("Gerando..."):
+                                from app.mineracao.branding import apply_branding_to_image
+                                arte = apply_branding_to_image(midia, style=st_brand)
                                 if arte:
                                     conn_s = get_connection(); cs = conn_s.cursor()
                                     cs.execute("UPDATE achados SET midia_path=? WHERE id=?", (arte, a_id))
                                     conn_s.commit(); conn_s.close()
-                                    st.success("Arte aplicada!"); st.rerun()
+                                    st.success("Aplicado!"); st.rerun()
 
                     if midia and midia.endswith((".mp4",".mov")) and os.path.exists(midia):
                         if st.button("🛡️ Anti-Shadowban", key=f"anti_{a_id}"):
@@ -456,7 +506,8 @@ with tab_studio:
                     with c_aprovar:
                         if status not in ("APPROVED","POSTED","POSTED_SHOPEE") and st.button("✅ Aprovar & Publicar", key=f"apr_{a_id}", type="primary"):
                             conn_ap = get_connection(); cap = conn_ap.cursor()
-                            link_af = get_affiliate_link(link) if link else f"https://shope.ee/default_{a_id}"
+                            # Injeta Sub-ID Individual
+                            link_af = get_affiliate_link(link, sub_id=f"studio_a{a_id}") if link else f"https://shope.ee/default_{a_id}"
                             nome_ap = f"Oferta #{a_id}"
                             cap.execute("UPDATE achados SET status='APPROVED', status_fluxo='Pronto' WHERE id=?", (a_id,))
                             cap.execute("INSERT OR IGNORE INTO produtos (achado_id,link_afiliado,nome_produto,categoria) VALUES(?,?,?,?)",
@@ -471,4 +522,350 @@ with tab_studio:
                             crj.execute("UPDATE achados SET status='REJECTED', status_fluxo='Postado' WHERE id=?", (a_id,))
                             conn_rj.commit(); conn_rj.close()
                             st.warning("Descartado."); st.rerun()
+
+# ══════════════════════════════════════════════
+#  ABA 2 — VITRINE & LOGS
+# ══════════════════════════════════════════════
+with tab_vitrine:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,rgba(96,165,250,0.1),rgba(96,165,250,0.04));border:1px solid rgba(96,165,250,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+      <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">📊 Gestão de Vitrine & Logs</h3>
+      <p style="margin:4px 0 0;color:#8B90A0;font-size:0.85rem;">Visualize todos os produtos ativos e monitore a saúde do sistema.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_v1, col_v2 = st.columns([2, 1])
+
+    with col_v1:
+        st.markdown("#### 🛍️ Produtos Ativos")
+        conn_v = get_connection()
+        import pandas as pd
+        try:
+            df_prod = pd.read_sql_query("""
+                SELECT id, nome_produto, categoria, link_afiliado, data_criacao, estoque_ok
+                FROM produtos ORDER BY id DESC
+            """, conn_v)
+            if not df_prod.empty:
+                st.dataframe(df_prod, use_container_width=True, hide_index=True)
+            else:
+                st.info("Nenhum produto na vitrine ainda.")
+        except Exception:
+            st.warning("Tabela 'produtos' ainda não populada.")
+        conn_v.close()
+
+    with col_v2:
+        st.markdown("#### 📜 Logs do Sistema")
+        if os.path.exists(log_dir):
+            log_files = [f for f in os.listdir(log_dir) if f.endswith(".log")]
+            if not log_files:
+                st.info("Nenhum arquivo de log encontrado.")
+            else:
+                selected_log = st.selectbox("Selecionar log:", log_files)
+                log_path = os.path.join(log_dir, selected_log)
+                with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.readlines()
+                    st.text_area(f"Visualizando {selected_log}", value="".join(content[-50:]), height=400)
+        else:
+            st.info("Diretório de logs não encontrado.")
+
+# ══════════════════════════════════════════════
+#  ABA 3 — CAMPANHAS (THEME.JSON)
+# ══════════════════════════════════════════════
+with tab_camp:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,rgba(167,139,250,0.1),rgba(167,139,250,0.04));border:1px solid rgba(167,139,250,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+      <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">📅 Gestão de Campanhas & Identidade</h3>
+      <p style="margin:4px 0 0;color:#8B90A0;font-size:0.85rem;">Configure eventos especiais e identidade visual da vitrine.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    theme_path = os.path.join(proj_root, "theme.json")
+    theme_data = {"logotipo": "SIAA Shop", "cores": {"primaria": "#FF6B35"}, "modo_campanha": {"ativo": False, "titulo": "", "descricao": "", "dias_de_evento": []}}
+    if os.path.exists(theme_path):
+        with open(theme_path, "r", encoding="utf-8", errors="replace") as f: theme_data = json.load(f)
+
+    with st.form("form_theme"):
+        st.markdown("#### 🎨 Identidade Visual")
+        c1, c2 = st.columns(2)
+        new_logo = c1.text_input("Nome/Logotipo:", value=theme_data.get("logotipo", "SIAA Shop"))
+        new_color = c2.color_picker("Cor Primária:", value=theme_data.get("cores", {}).get("primaria", "#FF6B35"))
+        
+        st.divider()
+        st.markdown("#### 🚀 Modo Campanha (Eventos)")
+        camp_active = st.toggle("Ativar Modo Campanha", value=theme_data.get("modo_campanha", {}).get("ativo", False))
+        c_t, c_d = st.columns(2)
+        camp_title = c_t.text_input("Título do Banner:", value=theme_data.get("modo_campanha", {}).get("titulo", ""))
+        camp_desc = c_d.text_input("Subtítulo:", value=theme_data.get("modo_campanha", {}).get("descricao", ""))
+        
+        if st.form_submit_button("💾 Salvar Configurações", type="primary", use_container_width=True):
+            theme_data["logotipo"] = new_logo
+            theme_data["cores"]["primaria"] = new_color
+            theme_data["modo_campanha"]["ativo"] = camp_active
+            theme_data["modo_campanha"]["titulo"] = camp_title
+            theme_data["modo_campanha"]["descricao"] = camp_desc
+            with open(theme_path, "w", encoding="utf-8") as f:
+                json.dump(theme_data, f, indent=4, ensure_ascii=False)
+            st.success("✅ Configurações salvas!")
+            st.rerun()
+
+    st.markdown("#### ⌚ Agendamentos Pendentes")
+    conn_c = get_connection()
+    try:
+        df_ag = pd.read_sql_query("""
+            SELECT id, nome_produto, data_agendada, status_publicacao
+            FROM produtos WHERE status_publicacao != 'POSTED' AND data_agendada IS NOT NULL
+            ORDER BY data_agendada ASC
+        """, conn_c)
+        if not df_ag.empty:
+            st.dataframe(df_ag, use_container_width=True, hide_index=True)
+        else:
+            st.caption("Nenhum post agendado no momento.")
+    except Exception:
+        st.caption("Aguardando inicialização da tabela de agendamentos.")
+    conn_c.close()
+
+# ══════════════════════════════════════════════
+#  ABA 4 — CUPONS
+# ══════════════════════════════════════════════
+with tab_cupons:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(251,191,36,0.04));border:1px solid rgba(251,191,36,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+      <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">🎟️ Gestão de Cupons Shopee</h3>
+      <p style="margin:4px 0 0;color:#8B90A0;font-size:0.85rem;">Adicione cupons de desconto para aparecerem na sua vitrine.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.expander("🆕 Adicionar Novo Cupom"):
+        with st.form("form_add_cupom"):
+            c1, c2, c3 = st.columns(3)
+            cod = c1.text_input("Código do Cupom:", placeholder="EX: SHOPEE20")
+            val = c2.text_input("Valor/Desconto:", placeholder="R$ 20 ou 10%")
+            link_c = c3.text_input("Link de Destino:", placeholder="https://shope.ee/...")
+            if st.form_submit_button("✅ Salvar Cupom", type="primary", use_container_width=True):
+                if cod and val:
+                    conn = get_connection(); c = conn.cursor()
+                    try:
+                        c.execute("INSERT INTO cupons (codigo, valor, link_destino) VALUES (?,?,?)", (cod, val, link_c))
+                        conn.commit(); st.success("Cupom adicionado!"); st.rerun()
+                    except: st.error("Erro ao adicionar (Código já existe?)")
+                    finally: conn.close()
+
+    st.markdown("#### 🎫 Cupons Ativos")
+    conn = get_connection()
+    try:
+        df_cp = pd.read_sql_query("SELECT id, codigo, valor, link_destino, ativo FROM cupons", conn)
+        if not df_cp.empty:
+            st.data_editor(df_cp, use_container_width=True, hide_index=True, key="editor_cupons")
+        else:
+            st.info("Nenhum cupom cadastrado.")
+    except: st.caption("Tabela de cupons sendo inicializada...")
+    conn.close()
+
+# ══════════════════════════════════════════════
+#  ABA 5 — BANCO DE MÍDIAS
+# ══════════════════════════════════════════════
+with tab_banco:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(59,130,246,0.04));border:1px solid rgba(59,130,246,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+      <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">🗂️ Banco de Mídias 2.0</h3>
+      <p style="margin:4px 0 0;color:#8B90A0;font-size:0.85rem;">Gerencie arquivos de /media e /downloads, faça upload em lote e envie para o Estúdio.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Upload em Lote ──
+    with st.expander("⬆️ Upload em Lote", expanded=False):
+        up_files = st.file_uploader("Arraste fotos ou vídeos aqui:", type=["jpg","jpeg","png","webp","mp4","mov"], accept_multiple_files=True, key="bulk_up")
+        if up_files:
+            if st.button("🚀 Iniciar Upload de Lote", type="primary"):
+                media_path = os.path.join(proj_root, "media")
+                for f in up_files:
+                    with open(os.path.join(media_path, f.name), "wb") as out:
+                        out.write(f.read())
+                st.success(f"✅ {len(up_files)} arquivos salvos com sucesso!")
+                st.rerun()
+
+    media_dir = os.path.join(proj_root, "media")
+    down_dir = os.path.join(proj_root, "downloads")
+    for d in [media_dir, down_dir]: os.makedirs(d, exist_ok=True)
+    
+    arquivos_m = [(f, media_dir) for f in os.listdir(media_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.mp4'))]
+    arquivos_d = [(f, down_dir) for f in os.listdir(down_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.mp4'))]
+    all_files = arquivos_m + arquivos_d
+    
+    if not all_files:
+        st.info("Nenhuma mídia encontrada em /media ou /downloads.")
+    else:
+        st.markdown(f"Exibindo **{len(all_files)}** arquivos detectados.")
+        search_m = st.text_input("🔍 Buscar mídia por nome:", "")
+        if search_m: all_files = [f for f in all_files if search_m.lower() in f[0].lower()]
+        
+        # Grid de mídias
+        cols_m = st.columns(4)
+        for i, (arq, folder) in enumerate(all_files):
+            idx = i % 4
+            path_arq = os.path.join(folder, arq)
+            with cols_m[idx]:
+                with st.container(border=True):
+                    if arq.lower().endswith('.mp4'):
+                        st.video(path_arq)
+                    else:
+                        st.image(path_arq, use_container_width=True)
+                    st.caption(f"📄 {arq[:20]}")
+                    
+                    # Botões de ação
+                    c_b1, c_b2 = st.columns(2)
+                    if c_b1.button("🎨 Arte", key=f"re_pillow_{i}", use_container_width=True):
+                        with st.spinner("Gerando..."):
+                            try:
+                                from app.publisher.card_generator import generate_feed_card
+                                nova_arte = generate_feed_card(path_arq)
+                                if nova_arte:
+                                    st.success("Gerada!"); st.rerun()
+                            except Exception as e: st.error("Erro")
+                    
+                    if c_b2.button("📦 Usar", key=f"use_{i}", type="primary", use_container_width=True):
+                        conn_u = get_connection(); cu = conn_u.cursor()
+                        cu.execute("INSERT INTO achados (texto_original, midia_path, status, status_fluxo) VALUES (?, ?, 'PENDING', 'Ideia')",
+                                   (f"Novo Achado: {arq}", path_arq))
+                        conn_u.commit(); conn_u.close()
+                        st.success("No Estúdio!"); st.rerun()
+
+# ══════════════════════════════════════════════
+#  ABA 6 — ENGAJAMENTO (AUTO-DM)
+# ══════════════════════════════════════════════
+with tab_eng:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.04));border:1px solid rgba(16,185,129,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+      <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">💬 Monitor de Engajamento & Auto-DM</h3>
+      <p style="margin:4px 0 0;color:#8B90A0;font-size:0.85rem;">Acompanhe em tempo real quem o seu bot está atendendo no Instagram.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("#### 🚀 Histórico de Conversas (Auto-DM)")
+    conn_e = get_connection()
+    try:
+        df_bot = pd.read_sql_query("""
+            SELECT timestamp, user_id, palavra_gatilho, resposta_enviada
+            FROM bot_logs ORDER BY timestamp DESC LIMIT 50
+        """, conn_e)
+        if not df_bot.empty:
+            st.dataframe(df_bot, use_container_width=True, hide_index=True)
+        else:
+            st.info("Nenhuma interação registrada ainda. O bot está aguardando gatilhos!")
+    except: st.caption("Tabela de logs do bot sendo inicializada...")
+    conn_e.close()
+
+    st.divider()
+    st.markdown("#### 🔍 Simular Resposta Manual")
+    with st.expander("💬 Responder Comentário Específico"):
+        c_id = st.text_input("ID do Comentário:", placeholder="123456789...")
+        c_msg = st.text_area("Sua Resposta:", placeholder="Oii! Te mandei o link no direct! ✨")
+        if st.button("🚀 Enviar Resposta Agora", type="primary"):
+            if c_id and c_msg:
+                try:
+                    from app.social_interactions.instagram_bot import post_public_reply
+                    if post_public_reply(c_id, c_msg):
+                        st.success("Resposta enviada com sucesso!")
+                    else: st.error("Erro ao enviar. Verifique o Access Token.")
+                except Exception as e: st.error(str(e))
+
+    st.divider()
+    st.markdown("#### ⚙️ Configurações do Bot")
+    with st.expander("🛠️ Gerenciar Gatilhos e Mensagens", expanded=False):
+        conn_cfg = get_connection()
+        import pandas as pd
+        df_cfg = pd.read_sql_query("SELECT chave, valor FROM config", conn_cfg)
+        conn_cfg.close()
+        
+        with st.form("form_config"):
+            new_triggers = st.text_input("Palavras-Gatilho (separadas por vírgula):", 
+                                          value=df_cfg[df_cfg['chave']=='trigger_words']['valor'].values[0] if not df_cfg.empty else "")
+            new_reply = st.text_input("Resposta Pública Padrão:", 
+                                       value=df_cfg[df_cfg['chave']=='reply_message']['valor'].values[0] if not df_cfg.empty else "")
+            
+            if st.form_submit_button("💾 Salvar Configurações", type="primary"):
+                conn_save = get_connection(); cs = conn_save.cursor()
+                cs.execute("UPDATE config SET valor = ? WHERE chave = 'trigger_words'", (new_triggers,))
+                cs.execute("UPDATE config SET valor = ? WHERE chave = 'reply_message'", (new_reply,))
+                conn_save.commit(); conn_save.close()
+                st.success("Configurações atualizadas!"); st.rerun()
+
+    st.divider()
+    st.markdown("#### 📑 Histórico de Interações")
+    t_comm, t_dm = st.tabs(["💬 Comentários", "✉️ DMs"])
+
+    conn_h = get_connection()
+    with t_comm:
+        try:
+            df_comm = pd.read_sql_query("""
+                SELECT timestamp, username, texto, media_id 
+                FROM engagement_logs WHERE tipo = 'COMMENT' ORDER BY timestamp DESC LIMIT 50
+            """, conn_h)
+            if not df_comm.empty:
+                st.dataframe(df_comm, use_container_width=True, hide_index=True)
+            else: st.info("Nenhum comentário sincronizado.")
+        except: st.caption("Inicializando...")
+
+    with t_dm:
+        try:
+            df_dm = pd.read_sql_query("""
+                SELECT timestamp, username, texto 
+                FROM engagement_logs WHERE tipo = 'DM' ORDER BY timestamp DESC LIMIT 50
+            """, conn_h)
+            if not df_dm.empty:
+                st.dataframe(df_dm, use_container_width=True, hide_index=True)
+            else: st.info("Nenhuma DM sincronizada.")
+        except: st.caption("Inicializando...")
+    conn_h.close()
+
+# ══════════════════════════════════════════════
+#  ABA 7 — VITRINE ONLINE (STATUS)
+# ══════════════════════════════════════════════
+with tab_online:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,rgba(255,107,53,0.1),rgba(255,107,53,0.04));border:1px solid rgba(255,107,53,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+      <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">🌐 Status da Vitrine Online</h3>
+      <p style="margin:4px 0 0;color:#8B90A0;font-size:0.85rem;">Gerencie o deploy do seu site no GitHub Pages.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_on1, col_on2 = st.columns(2)
+
+    with col_on1:
+        st.markdown("#### 🚀 Sincronização")
+        st.info("A vitrine é atualizada automaticamente a cada 1 hora. Se precisar de uma atualização imediata, use o botão abaixo.")
+        if st.button("🔄 Atualizar Vitrine Agora", type="primary", use_container_width=True, key="btn_update_online"):
+            with st.spinner("Gerando HTML e enviando para o GitHub..."):
+                try:
+                    # Executa o script de atualização
+                    script_path = os.path.join(proj_root, "app/publisher/update_vitrine.py")
+                    result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)
+                    if result.returncode == 0:
+                        st.success("✅ Vitrine atualizada e enviada para o GitHub!")
+                        st.balloons()
+                    else:
+                        st.error(f"Erro no deploy: {result.stderr}")
+                except Exception as e: st.error(str(e))
+
+    with col_on2:
+        st.markdown("#### 🔗 Links Úteis")
+        git_repo = os.getenv("GITHUB_REPO", "SeuUsuario/SeuRepo")
+        # Prevenção de erro caso o repo não tenha '/'
+        if '/' in git_repo:
+            user_git, repo_git = git_repo.split('/')[:2]
+            site_url = f"https://{user_git}.github.io/{repo_git}"
+        else:
+            site_url = f"https://github.com/{git_repo}"
+            
+        st.markdown(f"""
+        - **Site na Web:** [{site_url}]({site_url})
+        - **Repositório GitHub:** [Link do Repo](https://github.com/{git_repo})
+        """)
+        
+        # Preview do theme.json atual
+        with st.expander("📄 Ver theme.json atual"):
+            theme_path_check = os.path.join(proj_root, "theme.json")
+            if os.path.exists(theme_path_check):
+                with open(theme_path_check, "r", encoding="utf-8", errors="replace") as f:
+                    st.json(json.load(f))
 

@@ -17,18 +17,16 @@ def load_theme():
     # Fallback default
     return {"cores": {"primaria": "#ff5722"}}
 
-def apply_branding_to_image(image_path, text_overlay="ACHADINHO DA VEZ"):
+def apply_branding_to_image(image_path, text_overlay="ACHADINHO DA VEZ", style="standard"):
     """
-    Pega uma foto (suporta .jpg, .png, .webp, .jfif), e aplica a identidade 
-    visual (borda ou tarja) via biblioteca Pillow.
+    Aplica identidade visual à imagem. Suporta estilos: 'standard', 'minimalist_glass'.
     """
     if not image_path or not os.path.exists(image_path):
         return image_path
         
-    # Validar extensão
     ext = os.path.splitext(image_path)[1].lower()
     if ext not in ['.jpg', '.jpeg', '.png', '.webp', '.jfif']:
-        log_event(f"Formato de imagem não suportado para branding: {ext}", component="BrandingEngine", status="WARNING")
+        log_event(f"Formato não suportado: {ext}", component="BrandingEngine", status="WARNING")
         return image_path
         
     theme = load_theme()
@@ -37,42 +35,63 @@ def apply_branding_to_image(image_path, text_overlay="ACHADINHO DA VEZ"):
     try:
         img = Image.open(image_path).convert("RGBA")
         width, height = img.size
+        overlay = Image.new("RGBA", img.size, (0,0,0,0))
+        drawing = ImageDraw.Draw(overlay)
         
-        # Cria uma layer de desenho
-        drawing = ImageDraw.Draw(img)
-        
-        # EXECUTANDO: Tarja na base da imagem (ex: 15% inferior de altura)
-        banner_height = int(height * 0.15)
-        # Retângulo cheio com Alpha (transparente) ou Sólido
-        shape = [(0, height - banner_height), (width, height)]
-        drawing.rectangle(shape, fill=cor_primaria)
-        
-        # Tenta carregar uma fonte default ou Arial. Se falhar no Windows/Linux, recai pra default sem erro
+        # Seleção de Fonte
         try:
-            # Fonte Arial no Windows
-            font = ImageFont.truetype("arialbd.ttf", int(height * 0.08))
+            # Tentar carregar uma fonte mais moderna se disponível, senão arialbd
+            font_size = int(height * 0.07)
+            font = ImageFont.truetype("arialbd.ttf", font_size)
         except:
             font = ImageFont.load_default()
+
+        if style == "minimalist_glass":
+            # Estilo Glassmorphism: Tarja centralizada ou flutuante com blur (simulado)
+            banner_h = int(height * 0.12)
+            margin = int(width * 0.05)
+            # Retângulo com cantos arredondados e transparência
+            shape = [margin, height - banner_h - margin, width - margin, height - margin]
+            # Branco semi-transparente para o 'glass'
+            drawing.rounded_rectangle(shape, radius=20, fill=(255, 255, 255, 180), outline=(255, 255, 255, 200), width=2)
             
-        # Adiciona o Texto (Ex: PROMOÇÃO, ACHADOS DO DIA)
-        text_bbox = drawing.textbbox((0, 0), text_overlay, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_height = text_bbox[3] - text_bbox[1]
+            # Texto centralizado na cor escura para contraste no glass branco
+            text_bbox = drawing.textbbox((0, 0), text_overlay, font=font)
+            tx_w = text_bbox[2] - text_bbox[0]
+            tx_h = text_bbox[3] - text_bbox[1]
+            
+            tx_x = (width - tx_w) / 2
+            tx_y = (height - banner_h - margin) + (banner_h - tx_h) / 2
+            drawing.text((tx_x, tx_y), text_overlay, fill=(30, 30, 30, 255), font=font)
+            
+        else:
+            # Estilo Standard (Tarja Sólida na Base)
+            banner_h = int(height * 0.15)
+            shape = [(0, height - banner_h), (width, height)]
+            drawing.rectangle(shape, fill=cor_primaria)
+            
+            text_bbox = drawing.textbbox((0, 0), text_overlay, font=font)
+            tx_w = text_bbox[2] - text_bbox[0]
+            tx_h = text_bbox[3] - text_bbox[1]
+            
+            tx_x = (width - tx_w) / 2
+            tx_y = (height - banner_h) + (banner_h - tx_h) / 2
+            
+            # Sombra e Texto
+            drawing.text((tx_x+2, tx_y+2), text_overlay, fill="black", font=font)
+            drawing.text((tx_x, tx_y), text_overlay, fill="white", font=font)
+
+        # Mesclar overlay
+        out = Image.alpha_composite(img, overlay)
         
-        text_x = (width - text_width) / 2
-        text_y = (height - banner_height) + (banner_height - text_height) / 2
+        # Salvar
+        suffix = "_minimalist" if style == "minimalist_glass" else "_branding"
+        out_path = image_path.replace(ext, f"{suffix}{ext}")
+        out.convert("RGB").save(out_path, quality=95)
         
-        # Sombra dupla para leitura perfeita
-        drawing.text((text_x+3, text_y+3), text_overlay, fill="black", font=font)
-        drawing.text((text_x, text_y), text_overlay, fill="white", font=font)
-        
-        # Salva o novo resultado por cima do antigo ou arquivo novo
-        out_path = image_path.replace(ext, f"_branding{ext}")
-        img.convert("RGB").save(out_path, quality=95)
-        
-        log_event(f"Branding aplicado com sucesso: {out_path}", component="BrandingEngine", status="SUCCESS")
+        log_event(f"Branding ({style}) aplicado: {out_path}", component="BrandingEngine", status="SUCCESS")
         return out_path
         
     except Exception as e:
-        log_event(f"Falha ao processar design Pillow: {str(e)}", component="BrandingEngine", status="ERROR", level=logging.ERROR)
+        log_event(f"Erro no Branding: {str(e)}", component="BrandingEngine", status="ERROR", level=logging.ERROR)
         return image_path

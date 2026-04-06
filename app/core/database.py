@@ -57,7 +57,9 @@ def init_db():
             status_fluxo TEXT DEFAULT 'Ideia',
             legenda_instagram TEXT,
             legenda_tiktok TEXT,
-            legenda_shopee TEXT
+            legenda_shopee TEXT,
+            grupo_id TEXT,
+            tema_grupo TEXT
         )
     ''')
     
@@ -105,6 +107,36 @@ def init_db():
         )
     ''')
     
+    # Tabela 6: Logs de Engajamento Bruto (Comentários e DMs Recebidos)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS engagement_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meta_id TEXT UNIQUE,
+            user_id TEXT,
+            username TEXT,
+            tipo TEXT, -- 'COMMENT' ou 'DM'
+            texto TEXT,
+            media_id TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Tabela 7: Configurações Dinâmicas (Gatilhos, Mensagens, etc)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS config (
+            chave TEXT PRIMARY KEY,
+            valor TEXT
+        )
+    ''')
+
+    # Seed de configuração padrão se não existir
+    c.execute("INSERT OR IGNORE INTO config (chave, valor) VALUES (?, ?)", 
+              ("trigger_words", "quero,link,onde compra,quanto custa,manda o link,eu quero,valor"))
+    c.execute("INSERT OR IGNORE INTO config (chave, valor) VALUES (?, ?)", 
+              ("reply_message", "Te mandei no direct! 💌"))
+
+    conn.commit()
+    
     # Migrações de colunas existentes
     colunas_achados = [
         ("cover_path", "TEXT"),
@@ -118,6 +150,8 @@ def init_db():
         ("legenda_instagram", "TEXT"),
         ("legenda_tiktok", "TEXT"),
         ("legenda_shopee", "TEXT"),
+        ("grupo_id", "TEXT"),
+        ("tema_grupo", "TEXT"),
     ]
     for col, col_type in colunas_achados:
         try:
@@ -132,13 +166,12 @@ def init_db():
         except sqlite3.OperationalError:
             pass
     
-    # Migração campanhas
-    cols_camp = [("status_publicacao", "TEXT DEFAULT 'PENDING'"), ("data_agendada", "TEXT"), ("evento", "TEXT DEFAULT 'COMUM'")]
-    for col, col_type in cols_camp:
-        try:
-            c.execute(f"ALTER TABLE produtos ADD COLUMN {col} {col_type}")
-        except sqlite3.OperationalError:
-            pass
+    # Migração media_bank
+    try:
+        c.execute("ALTER TABLE media_bank ADD COLUMN last_seen DATETIME")
+    except sqlite3.OperationalError: pass
+
+    conn.commit()
 
     conn.commit()
     conn.close()

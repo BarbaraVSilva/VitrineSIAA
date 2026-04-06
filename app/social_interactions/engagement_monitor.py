@@ -101,3 +101,59 @@ def get_api_status() -> dict:
         return {"ok": True, "nome": data.get("name", ""), "username": data.get("username", ""), "id": data.get("id")}
     except Exception as e:
         return {"ok": False, "motivo": str(e)}
+
+
+def sync_engagement():
+    """
+    Sincroniza comentários e DMs da Meta API com o banco de dados local (engagement_logs).
+    """
+    from app.core.database import get_connection
+    conn = get_connection()
+    c = conn.cursor()
+    
+    sync_count = 0
+    
+    # 1. Sincronizar Comentários
+    medias = fetch_recent_media()
+    for m in medias:
+        m_id = m.get("id")
+        comments = fetch_comments_for_media(m_id)
+        for comm in comments:
+            c_id = comm.get("id")
+            text = comm.get("text")
+            user = comm.get("username")
+            ts = comm.get("timestamp")
+            
+            try:
+                c.execute("""
+                    INSERT INTO engagement_logs (meta_id, username, tipo, texto, media_id, timestamp)
+                    VALUES (?, ?, 'COMMENT', ?, ?, ?)
+                """, (c_id, user, text, m_id, ts))
+                sync_count += 1
+            except Exception:
+                pass # Já existe (meta_id UNIQUE)
+                
+    # 2. Sincronizar DMs (Conversas)
+    convs = fetch_recent_conversations()
+    for conv in convs:
+        # Pega a última mensagem da conversa
+        msgs = conv.get("messages", {}).get("data", [])
+        if msgs:
+            last_msg = msgs[0]
+            m_id = last_msg.get("id")
+            text = last_msg.get("message")
+            user = last_msg.get("from", {}).get("username") or last_msg.get("from", {}).get("id")
+            ts = last_msg.get("created_time")
+            
+            try:
+                c.execute("""
+                    INSERT INTO engagement_logs (meta_id, username, tipo, texto, timestamp)
+                    VALUES (?, ?, 'DM', ?, ?)
+                """, (m_id, user, text, ts))
+                sync_count += 1
+            except Exception:
+                pass 
+                
+    conn.commit()
+    conn.close()
+    return sync_count

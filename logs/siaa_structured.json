@@ -10,3 +10,7 @@
 {"timestamp": "2026-04-02T08:36:42.220453", "level": "INFO", "component": "CrawlerTelegram", "message": "Erro ao ler hist\u00f3rico de @afiliadosshopeebroficial: name 'shopee_links' is not defined", "event": "HISTORY_FETCH_ERROR", "status": "ERROR"}
 {"timestamp": "2026-04-02T08:36:49.599901", "level": "INFO", "component": "CrawlerTelegram", "message": "Erro ao ler hist\u00f3rico de Beleza | | Criadores e Afiliados Shopee Brasil: name 'shopee_links' is not defined", "event": "HISTORY_FETCH_ERROR", "status": "ERROR"}
 {"timestamp": "2026-04-02T08:37:00.460554", "level": "INFO", "component": "CrawlerTelegram", "message": "Erro ao ler hist\u00f3rico de @viralizandoshopee: name 'shopee_links' is not defined", "event": "HISTORY_FETCH_ERROR", "status": "ERROR"}
+{"timestamp": "2026-04-03T21:36:04.671027", "level": "INFO", "component": "WebhookServer", "message": "Request: GET /", "event": "HTTP_REQ", "status": "INFO"}
+{"timestamp": "2026-04-03T21:36:04.673699", "level": "INFO", "component": "WebhookServer", "message": "Response: 404", "event": "HTTP_RES", "status": "INFO"}
+{"timestamp": "2026-04-03T21:36:27.326458", "level": "INFO", "component": "WebhookServer", "message": "Request: GET /webhook", "event": "HTTP_REQ", "status": "INFO"}
+{"timestamp": "2026-04-03T21:36:27.329654", "level": "INFO", "component": "WebhookServer", "message": "Response: 200", "event": "HTTP_RES", "status": "INFO"}

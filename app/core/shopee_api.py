@@ -10,15 +10,16 @@ load_dotenv()
 APP_ID = os.getenv("SHOPEE_APP_ID")
 APP_SECRET = os.getenv("SHOPEE_APP_SECRET")
 
-def get_affiliate_link(original_link):
+def get_affiliate_link(original_link, sub_id=None):
     """
     Converte um link bruto no seu link de Afiliado da Shopee consumindo a API oficial (Open Platform).
-    Faz o hash da chave HMAC SHA256 exigido nas requisições seguras da Shopee.
+    Adiciona Sub-ID para rastreio de Analytics.
     """
     if not APP_ID or not APP_SECRET:
         print("[SHOPEE API] ALERTA: Credenciais AppID/AppSecret Ausentes.")
         print("[SHOPEE API] Entrando em Modo Seguro (Dummy Link) apenas para testes.")
-        return f"{original_link}?aff_id=TESTE_LOCAL"
+        s_id = f"&sub_id={sub_id}" if sub_id else ""
+        return f"{original_link}?aff_id=TESTE_LOCAL{s_id}"
         
     print(f"Iniciando conversão via SHOPEE OPEN API para o link: {original_link}")
     
@@ -32,9 +33,10 @@ def get_affiliate_link(original_link):
     
     url = f"{host}{path}?partner_id={APP_ID}&timestamp={timestamp}&sign={sign}"
     
+    # Injeta Sub-ID se disponível
     payload = {
         "originUrl": original_link,
-        "subIds": ["siaa_bot", "telegram_tracker"]
+        "subIds": [sub_id] if sub_id else ["siaa_bot"]
     }
     
     try:
@@ -42,11 +44,10 @@ def get_affiliate_link(original_link):
         data = response.json()
         
         if data.get("error") == "":
-            print("[SHOPEE API] Sucesso! Encurtador e Rastreador aplicados.")
+            print(f"[SHOPEE API] Sucesso! Rastreador aplicado: {sub_id or 'padrão'}")
             return data["response"]["shortLink"]
         else:
             print(f"[SHOPEE API] Erro fornecido pela Shopee: {data.get('error')} - {data.get('message')}")
-            # Em caso de erro na resposta, mantemos o link sem rastreio para não quebrar a vitrine
             return original_link
     except Exception as e:
         print(f"[SHOPEE API] Timeout ou Erro Rest: {e}")

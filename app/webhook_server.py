@@ -13,7 +13,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.core.repository import AchadosRepository
-from app.social_interactions.instagram_bot import check_intent_with_ai, reply_to_comment, send_dm
+from app.social_interactions.instagram_bot import detectar_gatilho, send_private_dm, post_public_reply
 from app.core.logger import log_event
 import logging
 
@@ -33,6 +33,21 @@ app.add_middleware(
 )
 
 EVOLUTION_API_SECRET = os.getenv("EVOLUTION_API_SECRET", "siaa_master_key_2026")
+
+# ==========================================
+# WEBHOOK GENÉRICO DE VERIFICAÇÃO META
+# ==========================================
+@app.get("/webhook")
+async def verify_webhook(request: Request):
+    """Endpoint de verificação genérico para webhooks da Meta."""
+    # O 'Verify Token' que você definiu no painel da Meta
+    verify_token = "SIAA_SECRET_2026"
+    
+    params = request.query_params
+    if params.get("hub.verify_token") == verify_token:
+        # Retorna apenas o challenge como texto puro (exigência da Meta)
+        return Response(content=params.get("hub.challenge"), media_type="text/plain")
+    return Response(content="Token de verificação inválido", status_code=403)
 
 async def verify_api_key(request: Request):
     """Verifica se a requisição possui a chave secreta configurada no Evolution API."""
@@ -91,11 +106,12 @@ async def process_meta_webhook(request: Request):
                     if from_user == IG_USER_ID:
                         continue
                         
-                    if check_intent_with_ai(comment_text):
-                        resposta = "Oii! O link especial deste produto está na minha Bio ou mandei no seu direct! 🛍️✨"
+                    gatilho = detectar_gatilho(comment_text)
+                    if gatilho:
+                        texto_dm = "Link da Vitrine: https://barbaravsilva.github.io/VitrineSIAA"
                         if META_ACCESS_TOKEN:
-                            reply_to_comment(comment_id, resposta, META_ACCESS_TOKEN)
-                            send_dm(IG_USER_ID, from_user, "Link da Vitrine: https://barbaravsilva.github.io/VitrineSIAA", META_ACCESS_TOKEN)
+                            send_private_dm(comment_id, texto_dm)
+                            post_public_reply(comment_id, "Oii! Te mandei no direct! 🛍️✨")
                             
     return {"status": "success"}
 

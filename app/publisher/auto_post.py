@@ -3,6 +3,7 @@ import time
 import sys
 
 from app.core.database import get_connection
+from app.core.shopee_api import get_affiliate_link
 from app.publisher.update_vitrine import generate_html_vitrine
 from app.publisher.whatsapp_groups import publish_to_whatsapp_group
 
@@ -36,20 +37,21 @@ def run_publisher():
         
         # Faz a postagem (Para WhatsApp)
         if wa_group_jid:
-            texto_wa = f"{legenda}\n\n👉 Compre aqui: {link_afiliado}"
+            # Analytics Passo C: Link específico para WhatsApp
+            link_wa = get_affiliate_link(link_afiliado, sub_id=f"post_{p_id}_wa")
+            texto_wa = f"{legenda}\n\n👉 Compre aqui: {link_wa}"
             publish_to_whatsapp_group(wa_group_jid, texto_wa, midia)
         
         # Faz a postagem (Para o Instagram via META API Graph)
         from app.publisher.meta_api_publisher import MetaGraphPublisher
         meta_bot = MetaGraphPublisher()
         
-        # O API do IG precisa de um link de mídia público e não de arquivo local path_to_file.
-        # Caso nosso midia já seja HTTP (ex: direto da shopee sem baixar), passamos ele.
-        # Como o SIAA baixa as fotos, assumiremos que vc usou uma CDN/Ngork na URL do Mídia 
-        # (Para testes do cliente onde midia as vezes é local, precisará adaptar a host).
-        # Regra do Instagram para Perfis sem Seguidores: Links clicáveis não existem no Feed/Reels.
-        # A conta deve hospedar a Vitrine (Gerada no Github Pages) no Link da Bio.
+        # Analytics Passo C: Referência ao post na Vitrine
+        # Regra do Instagram: Links clicáveis não existem no Feed/Reels.
+        # Por isso focamos no #ID para o usuário buscar no link da Bio.
         legenda_ig_segura = f"{legenda}\n\n🛍️ Procure pelo Achado #{p_id} no Link da nossa Bio para comprar!"
+        
+        # (O loop continuaria com publish_to_instagram...)
         
         sucesso = meta_bot.publish_to_instagram(url_publica_midia, legenda_ig_segura, is_video)
             

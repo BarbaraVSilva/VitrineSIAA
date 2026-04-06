@@ -59,7 +59,17 @@ def generate_html_vitrine():
         except Exception:
             dias = 0
 
-        item = {"id": p_id, "nome": nome, "link": link, "dias": dias, "midia": midia or ""}
+        # Copiar imagem para a pasta da vitrine (para o GitHub Pages servir)
+        midia_url = ""
+        if midia and os.path.exists(midia) and not midia.lower().endswith(('.mp4','.mov')):
+            import shutil
+            assets_dir = os.path.join(os.path.dirname(__file__), '../../vitrine/media')
+            os.makedirs(assets_dir, exist_ok=True)
+            fname = os.path.basename(midia)
+            shutil.copy2(midia, os.path.join(assets_dir, fname))
+            midia_url = f"media/{fname}"
+
+        item = {"id": p_id, "nome": nome, "link": link, "dias": dias, "midia": midia_url}
         recentes.append(item)
         if cat not in por_categoria:
             por_categoria[cat] = []
@@ -80,13 +90,11 @@ def generate_html_vitrine():
     cards_html = ""
     for item in recentes[:12]:
         badge = f"<span class='badge'>🆕 {item['dias']}d atrás</span>" if item['dias'] <= 3 else ""
-        midia_tag = ""
-        if item['midia'] and os.path.exists(item['midia']) and not item['midia'].endswith(('.mp4','.mov')):
-            # Converte path local para nada (no GitHub Pages não há acesso ao disco local)
-            pass
-
+        img_tag = f'<div class="card-img" style="background-image: url(\'{item["midia"]}\')"></div>' if item["midia"] else '<div class="card-img no-img">🎁</div>'
+        
         cards_html += f"""
         <a href="{item['link']}" target="_blank" rel="noopener noreferrer" class="product-card">
+            {img_tag}
             <div class="card-content">
                 <div class="card-name">{item['nome']}</div>
                 {badge}
@@ -102,8 +110,10 @@ def generate_html_vitrine():
             <h3 class="cat-title">📌 {cat}</h3>
             <div class="cat-grid">"""
         for item in itens[:6]:
+            img_grid = f'<div class="cat-img" style="background-image: url(\'{item["midia"]}\')"></div>' if item["midia"] else ''
             cats_html += f"""
                 <a href="{item['link']}" target="_blank" rel="noopener noreferrer" class="cat-card">
+                    {img_grid}
                     <div class="cat-card-name">{item['nome']}</div>
                     <div class="cat-card-cta">🔥 Comprar</div>
                 </a>"""
@@ -309,6 +319,21 @@ def generate_html_vitrine():
     }}
     .cat-card-cta {{
       color: #FF6B35; font-size: 0.75rem; font-weight: 700;
+    }}
+
+    .card-img {{
+      width: 60px; height: 60px; border-radius: 10px;
+      background-size: cover; background-position: center;
+      margin-right: 12px; flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.05);
+    }}
+    .no-img {{ display: flex; align-items: center; justify-content: center; background: rgba(255,107,53,0.05); font-size: 1.2rem; }}
+    
+    .cat-img {{
+      width: 100%; height: 90px; border-radius: 8px;
+      background-size: cover; background-position: center;
+      margin-bottom: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
     }}
 
     /* ── FOOTER ── */
