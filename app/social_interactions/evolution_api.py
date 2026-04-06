@@ -10,7 +10,7 @@ class EvolutionAPI:
     """
     def __init__(self):
         self.base_url = os.getenv("EVOLUTION_API_URL", "http://localhost:8080")
-        self.api_key = os.getenv("EVOLUTION_API_TOKEN", "siaa_master_key")
+        self.api_key = (os.getenv("EVOLUTION_API_TOKEN") or os.getenv("EVOLUTION_API_KEY") or "").strip()
         self.instance_name = os.getenv("EVOLUTION_INSTANCE", "SIAA_BOT")
 
     async def _send_request(self, endpoint: str, method: str = "POST", data: dict = None):

@@ -2,7 +2,9 @@ import os
 import uuid
 import asyncio
 import yt_dlp
+
 from app.core.logger import log_event
+from app.core.url_safety import assert_safe_download_url
 
 class UniversalDownloader:
     """
@@ -17,6 +19,12 @@ class UniversalDownloader:
         """
         Usa yt-dlp para baixar vídeos do Instagram, TikTok, etc.
         """
+        try:
+            assert_safe_download_url(url)
+        except ValueError:
+            log_event(f"Download bloqueado (URL não permitida): {url[:80]}", component="Downloader", event="DL_BLOCKED", status="WARNING")
+            return ""
+
         filename = f"social_{uuid.uuid4().hex[:8]}.mp4"
         filepath = os.path.join(self.download_path, filename)
         
@@ -50,20 +58,28 @@ class UniversalDownloader:
         """
         from playwright.async_api import async_playwright
         
+        try:
+            assert_safe_download_url(url)
+        except ValueError:
+            log_event(f"Scrape Shopee bloqueado: {url[:80]}", component="Downloader", event="SHOPEE_BLOCKED", status="WARNING")
+            return ""
+
         log_event(f"Iniciando scrape Shopee: {url}", component="Downloader", event="START_SHOPEE")
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
             try:
                 await page.goto(url, wait_until="networkidle", timeout=60000)
-                # Tenta localizar o vídeo no player da Shopee
                 video_el = await page.wait_for_selector("video", timeout=10000)
                 if video_el:
                     src = await video_el.get_attribute("src")
                     if src:
-                        filepath = await self._download_raw(src, ".mp4")
-                        await browser.close()
-                        return filepath
+                        try:
+                            assert_safe_download_url(src)
+                        except ValueError:
+                            log_event("URL de vídeo Shopee rejeitada pela política de segurança", component="Downloader", event="SHOPEE_SRC_BLOCKED", status="WARNING")
+                            return ""
+                        return await self._download_raw(src, ".mp4")
             except Exception as e:
                 log_event(f"Erro no scrape Shopee: {e}", component="Downloader", event="SHOPEE_ERROR", status="ERROR")
             finally:
@@ -72,6 +88,12 @@ class UniversalDownloader:
 
     async def _download_raw(self, url: str, ext: str) -> str:
         import aiohttp
+
+        try:
+            assert_safe_download_url(url)
+        except ValueError:
+            return ""
+
         filename = f"raw_{uuid.uuid4().hex[:8]}{ext}"
         filepath = os.path.join(self.download_path, filename)
         

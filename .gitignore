@@ -1,0 +1,13 @@
+.env
+.env.local
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+logs/*.log
+.idea/
+.vscode/

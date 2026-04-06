@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 echo ==================================================
 echo         INICIALIZANDO O CEREBRO SIAA-2026
 echo ==================================================
@@ -27,7 +28,7 @@ start "SIAA - Dashboard" cmd /k "%VENV_CMD% streamlit run app\dashboard\dashboar
 timeout /t 2 /nobreak >nul
 
 echo [4/5] Iniciando o Servidor Webhook Geral (Hub)...
-start "SIAA - Webhook" cmd /k "%VENV_CMD% python app\webhook_server.py"
+start "SIAA - Webhook" cmd /k "%VENV_CMD% python -m app.webhook_server"
 timeout /t 2 /nobreak >nul
 
 echo [5/5] Iniciando o Auto-DM Webhook (ManyChat Clone)...

@@ -1,0 +1,90 @@
+Metadata-Version: 2.4
+Name: siaa-2026
+Version: 0.1.0
+Summary: Sistema Inteligente de Automação de Afiliados
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: Telethon
+Requires-Dist: moviepy
+Requires-Dist: edge-tts
+Requires-Dist: python-dotenv
+Requires-Dist: streamlit
+Requires-Dist: requests
+Requires-Dist: pillow
+Requires-Dist: bs4
+Requires-Dist: sqlalchemy
+Requires-Dist: pytest
+Requires-Dist: schedule
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: google-generativeai
+Requires-Dist: pydantic
+Requires-Dist: playwright
+Requires-Dist: openai
+Requires-Dist: yt-dlp
+Requires-Dist: aiohttp
+
+# 🤖 SIAA-2026 - O Cérebro do Marketing de Afiliados
+
+![SIAA-2026 Banner](file:///C:/Users/Barbara/.gemini/antigravity/brain/95bb7b7c-33e4-465c-8b94-4ea28d6fdcb8/siaa_2026_banner_v1_png_1774639176854.png)
+
+O **SIAA-2026** (Sistema Inteligente de Automação de Afiliados) é uma plataforma "Master" de orquestração projetada para minerar, processar e publicar ofertas de afiliados em múltiplas redes sociais de forma 100% autônoma.
+
+---
+
+## 🏛️ Arquitetura Integrada
+
+O sistema opera como um hub central ("Cérebro") que controla diversos motores:
+
+- **Mining Core:** Crawler de Telegram e Scraper de WhatsApp (via Evolution API) para captura de "achadinhos".
+- **Processing Engine:** Editor de imagens/vídeos com tarjas dinâmicas (Pillow) e geração de ganchos virais com **IA (Gemini)**.
+- **Publishing Hub:** Auto-post para Shopee Video, Instagram (Meta Webhook) e atualização automática da **Vitrine Web (GitHub Pages)**.
+- **Admin Dashboard:** Interface de triagem desenvolvida em **Streamlit**.
+- **Backend:** **FastAPI** para recebimento de webhooks em tempo real.
+
+---
+
+## 🔥 Funcionalidades Sênior
+
+- [x] **Orquestração de Processos:** Painel de controle para iniciar/parar motores independentes.
+- [x] **Health Check Autônomo:** Verificação periódica de links quebrados ou produtos esgotados na Shopee.
+- [x] **AI Hook Generator:** Criação de legendas persuasivas usando modelos de linguagem de última geração.
+- [ ] **Dockerização:** Preparado para rodar em containers isolados para escalabilidade na nuvem.
+
+---
+
+## 🛠️ Configuração e Execução
+
+### Pré-requisitos
+- Python 3.10+
+- SQLite3
+- Instalar dependências: `pip install -r requirements.txt`
+
+### Inicialização Simplificada
+1.  Configure as variáveis no `.env` (API Keys da Shopee, Meta, Telegram e Gemini).
+2.  Dê dois cliques no arquivo **`iniciar_siaa.bat`** na pasta raiz. Ele abrirá automaticamente e simultaneamente:
+    - O Cérebro (Agendador Main)
+    - O Crawler do Telegram
+    - O Dashboard de Triagem
+    - O Servidor Webhook
+
+### 🚀 Primeiro Uso (Passo a Passo)
+
+1. **Acessar o Dashboard:** Após rodar o `.bat`, o sistema estará disponível no seu navegador pelo endereço: `http://localhost:8501`.
+2. **Triagem de "Achadinhos":** Na aba "✅ Aprovação", expanda as caixas para ver as ofertas em vídeo/foto mineradas pelo Crawler. *(Dica: Utilize o botão "Rodar Crawler (Mock)" no menu lateral se quiser testar de imediato sem esperar o Telegram).*
+3. **Magia da IA (Ganchos):** Clique no botão **"✨ Sugerir Ganchos Virais (IA)"**. O sistema usará o Gemini para ler o conteúdo cru e retornar ideias de legendas comerciais persuasivas.
+4. **Aprovação e Conversão:** Copie o gancho que gostar para o campo de legenda, determine um Título Curto e aperte **"✅ Aprovar"**. 
+    - *Under the hood:* Neste momento o sistema puxa o link cru e o submete à API da Shopee para gerar e salvar seu Link Oficial de Afiliada.
+5. **Atualizando a Vitrine:** Aperte o botão azul `"Atualizar Vitrine (HTML)"` no menu lateral esquedo para exportar o item aprovado para o seu site no Github Pages.
+6. **Agendamento Robótico:** O seu trabalho terminou! O "Cérebro" monitorará o relógio e efetuará as postagens finais daquele produto nas suas redes sociais sozinho no próximo Horário de Pico (12h, 18h, 21h).
+
+---
+
+## 🔒 Segurança
+
+- **Isolamento de Credenciais:** Uso rigoroso de variáveis de ambiente.
+- **Database:** SQLite com logs de transações para auditoria de postagens.
+
+---
+
+<p align="center">Desenvolvido com ❤️ por <b>Bárbara V. Silva</b></p>

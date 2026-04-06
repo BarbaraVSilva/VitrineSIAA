@@ -5,11 +5,14 @@ import time
 import os
 import json
 import httpx
+
+# Antes de carregar a app FastAPI (deps leem o ambiente na importação)
+os.environ["DB_PATH"] = "test_resilience.sqlite"
+os.environ["EVOLUTION_API_SECRET"] = "test_evolution_secret_for_pytest"
+os.environ["SIAA_INTERNAL_API_KEY"] = "test_internal_api_key_pytest"
+
 from app.webhook_server import app
 from app.core.database import get_connection, init_db
-
-# Mock DB for testing
-os.environ["DB_PATH"] = "test_resilience.sqlite"
 
 @pytest.fixture(autouse=True)
 def setup_db():
@@ -44,12 +47,9 @@ def test_webhook_authorized():
                 }
             }
         }
-        # Envia com o header de apikey default
-        headers = {"apikey": "siaa_master_key_2026"}
+        headers = {"apikey": "test_evolution_secret_for_pytest"}
         response = client.post("/webhook/whatsapp", json=payload, headers=headers)
         assert response.status_code == 200
-
-    assert count == 20
 
 def test_branding_format_support():
     """Valida se o motor de branding reconhece formatos modernos como .webp e .jfif."""

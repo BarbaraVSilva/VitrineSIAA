@@ -10,7 +10,10 @@ def publish_to_whatsapp_group(jid: str, text: str, media_path: str = None) -> bo
     # Configurações da Evolution API
     base_url = os.getenv("EVOLUTION_API_URL", "http://localhost:8080")
     instance_name = os.getenv("EVOLUTION_INSTANCE_NAME", "siaa")
-    api_key = os.getenv("EVOLUTION_API_KEY", "SUA_API_KEY_AQUI")
+    api_key = (os.getenv("EVOLUTION_API_KEY") or os.getenv("EVOLUTION_API_TOKEN") or "").strip()
+    if not api_key:
+        print("[WHATSAPP PUBLISHER] EVOLUTION_API_KEY / EVOLUTION_API_TOKEN não configurados.")
+        return False
 
     headers = {
         "apikey": api_key
@@ -26,18 +29,20 @@ def publish_to_whatsapp_group(jid: str, text: str, media_path: str = None) -> bo
             if not mime_type:
                 mime_type = "application/octet-stream"
 
-            # Prepara o arquivo informando o mimetype
-            files = {
-                'file': (os.path.basename(media_path), open(media_path, 'rb'), mime_type)
-            }
-            
+            caption_json = text.replace("\\", "\\\\").replace('"', '\\"')
             data = {
                 "number": jid,
                 "options": '{"delay": 1200, "presence": "composing"}',
-                "mediaMessage": '{"mediaType": "' + ('video' if 'video' in mime_type else 'image') + '", "caption": "' + text.replace('"', '\\"') + '"}'
+                "mediaMessage": '{"mediaType": "'
+                + ("video" if "video" in mime_type else "image")
+                + '", "caption": "'
+                + caption_json
+                + '"}',
             }
-            
-            response = requests.post(url, headers=headers, data=data, files=files)
+
+            with open(media_path, "rb") as media_fp:
+                files = {"file": (os.path.basename(media_path), media_fp, mime_type)}
+                response = requests.post(url, headers=headers, data=data, files=files)
             
         else:
             # Endpoint para texto simples

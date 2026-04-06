@@ -1,15 +1,43 @@
 import os
-import sqlite3
-import datetime
 import sys
+import datetime
+import html
 import subprocess
 import json
+from urllib.parse import urlparse
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+# Suporta execução direta `python app/publisher/update_vitrine.py` sem pacote instalado.
+_proj_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if _proj_root not in sys.path:
+    sys.path.insert(0, _proj_root)
+
 from app.core.database import get_connection
 from app.core.telegram_logs import send_admin_log
+from app.publisher.vitrine_html import build_vitrine_page_html
 
 THEME_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../theme.json'))
+
+
+def _safe_href(url: str) -> str:
+    if not url:
+        return "#"
+    p = urlparse(url.strip())
+    if p.scheme not in ("http", "https"):
+        return "#"
+    return html.escape(url, quote=True)
+
+
+def _safe_text(s: object) -> str:
+    return html.escape("" if s is None else str(s))
+
+
+def _safe_css_url(path: str) -> str:
+    """Caminho seguro dentro de url('...') em CSS (sem aspas nem parênteses)."""
+    if not path:
+        return ""
+    p = path.replace("\\", "/").replace("'", "").replace('"', "").replace("(", "").replace(")", "")
+    return html.escape(p, quote=False)
+
 
 def load_theme():
     if os.path.exists(THEME_PATH):
@@ -79,10 +107,12 @@ def generate_html_vitrine():
     colecoes = theme.get("colecoes", [])
     colecoes_html = ""
     for col in colecoes:
+        href = _safe_href(col.get("url", ""))
+        nome_c = _safe_text(col.get("nome", ""))
         colecoes_html += f"""
-        <a href="{col['url']}" target="_blank" rel="noopener noreferrer" class="link-btn">
+        <a href="{href}" target="_blank" rel="noopener noreferrer" class="link-btn">
             <span class="link-icon">🛍️</span>
-            <span class="link-text">{col['nome']}</span>
+            <span class="link-text">{nome_c}</span>
             <span class="link-arrow">→</span>
         </a>"""
 
@@ -90,13 +120,19 @@ def generate_html_vitrine():
     cards_html = ""
     for item in recentes[:12]:
         badge = f"<span class='badge'>🆕 {item['dias']}d atrás</span>" if item['dias'] <= 3 else ""
-        img_tag = f'<div class="card-img" style="background-image: url(\'{item["midia"]}\')"></div>' if item["midia"] else '<div class="card-img no-img">🎁</div>'
-        
+        if item["midia"]:
+            mu = _safe_css_url(item["midia"])
+            img_tag = f'<div class="card-img" style="background-image: url(\'{mu}\')"></div>'
+        else:
+            img_tag = '<div class="card-img no-img">🎁</div>'
+        href_p = _safe_href(item.get("link") or "")
+        nome_p = _safe_text(item.get("nome"))
+
         cards_html += f"""
-        <a href="{item['link']}" target="_blank" rel="noopener noreferrer" class="product-card">
+        <a href="{href_p}" target="_blank" rel="noopener noreferrer" class="product-card">
             {img_tag}
             <div class="card-content">
-                <div class="card-name">{item['nome']}</div>
+                <div class="card-name">{nome_p}</div>
                 {badge}
             </div>
             <div class="card-cta">Ver oferta →</div>
@@ -105,16 +141,23 @@ def generate_html_vitrine():
     # ── Categorias como links ──
     cats_html = ""
     for cat, itens in por_categoria.items():
+        cat_e = _safe_text(cat)
         cats_html += f"""
         <div class="category-section">
-            <h3 class="cat-title">📌 {cat}</h3>
+            <h3 class="cat-title">📌 {cat_e}</h3>
             <div class="cat-grid">"""
         for item in itens[:6]:
-            img_grid = f'<div class="cat-img" style="background-image: url(\'{item["midia"]}\')"></div>' if item["midia"] else ''
+            if item["midia"]:
+                mu = _safe_css_url(item["midia"])
+                img_grid = f'<div class="cat-img" style="background-image: url(\'{mu}\')"></div>'
+            else:
+                img_grid = ""
+            href_c = _safe_href(item.get("link") or "")
+            nome_c = _safe_text(item.get("nome"))
             cats_html += f"""
-                <a href="{item['link']}" target="_blank" rel="noopener noreferrer" class="cat-card">
+                <a href="{href_c}" target="_blank" rel="noopener noreferrer" class="cat-card">
                     {img_grid}
-                    <div class="cat-card-name">{item['nome']}</div>
+                    <div class="cat-card-name">{nome_c}</div>
                     <div class="cat-card-cta">🔥 Comprar</div>
                 </a>"""
         cats_html += "</div></div>"
@@ -128,268 +171,17 @@ def generate_html_vitrine():
 
     banner_class = "is-campanha" if is_campanha else ""
 
-    html = f"""<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{theme.get('logotipo', 'Vitrine VIP')} · Melhores Ofertas Shopee</title>
-  <meta name="description" content="Achadinhos selecionados com os melhores descontos da Shopee. Links de afiliado curados automaticamente.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-
-    body {{
-      font-family: 'Inter', sans-serif;
-      background: #0D0F14;
-      color: #E8EAF0;
-      min-height: 100vh;
-      padding-bottom: 48px;
-    }}
-
-    /* ── HERO ── */
-    .hero {{
-      background: linear-gradient(160deg, #1a0a00 0%, #130a1a 40%, #0D0F14 100%);
-      padding: 48px 20px 36px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }}
-    .hero::before {{
-      content: '';
-      position: absolute;
-      top: -80px; left: 50%;
-      transform: translateX(-50%);
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(255,107,53,0.18) 0%, transparent 70%);
-      pointer-events: none;
-    }}
-    .hero-avatar {{
-      width: 90px; height: 90px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #FF6B35, #FF4500);
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 2.5rem;
-      margin-bottom: 16px;
-      box-shadow: 0 0 40px rgba(255,107,53,0.5);
-    }}
-    .hero-title {{
-      font-size: 1.6rem; font-weight: 800;
-      color: #fff;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-    }}
-    .hero-title span {{ color: #FF6B35; }}
-    .hero-sub {{
-      color: #8B90A0; font-size: 0.9rem;
-      margin-top: 8px; line-height: 1.5;
-    }}
-    .hero-badge {{
-      display: inline-block;
-      background: rgba(255,107,53,0.15);
-      border: 1px solid rgba(255,107,53,0.3);
-      color: #FF6B35;
-      font-size: 0.75rem; font-weight: 600;
-      padding: 4px 12px; border-radius: 20px;
-      margin-top: 12px;
-    }}
-    .is-campanha .hero-badge {{
-      background: linear-gradient(135deg, #FF6B35, #FF4500);
-      color: white;
-      animation: pulse 2s infinite;
-    }}
-    @keyframes pulse {{
-      0%, 100% {{ box-shadow: 0 0 0 0 rgba(255,107,53,0.4); }}
-      50% {{ box-shadow: 0 0 0 8px rgba(255,107,53,0); }}
-    }}
-
-    /* ── CONTAINER ── */
-    .container {{
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 0 16px;
-    }}
-
-    /* ── SEÇÃO ── */
-    .section {{ margin-top: 32px; }}
-    .section-title {{
-      font-size: 0.72rem; font-weight: 700;
-      color: #8B90A0;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 12px;
-      display: flex; align-items: center; gap: 8px;
-    }}
-    .section-title::after {{
-      content: '';
-      flex: 1; height: 1px;
-      background: rgba(255,255,255,0.07);
-    }}
-
-    /* ── LINK BUTTONS (Coleções) ── */
-    .link-btn {{
-      display: flex; align-items: center; gap: 12px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 14px;
-      padding: 16px 18px;
-      margin-bottom: 10px;
-      text-decoration: none;
-      color: #E8EAF0;
-      font-weight: 600; font-size: 0.95rem;
-      transition: all 0.2s ease;
-    }}
-    .link-btn:hover {{
-      background: rgba(255,107,53,0.12);
-      border-color: rgba(255,107,53,0.4);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(255,107,53,0.2);
-    }}
-    .link-icon {{ font-size: 1.3rem; }}
-    .link-text {{ flex: 1; }}
-    .link-arrow {{ color: #FF6B35; font-size: 1.1rem; }}
-
-    /* ── PRODUCT CARDS (recentes) ── */
-    .product-card {{
-      display: flex; align-items: center;
-      justify-content: space-between;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 8px;
-      text-decoration: none;
-      color: #E8EAF0;
-      transition: all 0.2s ease;
-    }}
-    .product-card:hover {{
-      border-color: rgba(255,107,53,0.35);
-      background: rgba(255,107,53,0.06);
-    }}
-    .card-content {{ flex: 1; min-width: 0; }}
-    .card-name {{
-      font-size: 0.88rem; font-weight: 600;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }}
-    .badge {{
-      display: inline-block;
-      background: rgba(34,197,94,0.15);
-      color: #22C55E;
-      font-size: 0.68rem; font-weight: 700;
-      padding: 2px 8px; border-radius: 6px;
-      margin-top: 4px;
-    }}
-    .card-cta {{
-      color: #FF6B35; font-size: 0.82rem; font-weight: 700;
-      white-space: nowrap; margin-left: 12px;
-    }}
-
-    /* ── CATEGORIA ── */
-    .category-section {{ margin-top: 28px; }}
-    .cat-title {{
-      color: #E8EAF0; font-size: 0.9rem; font-weight: 700;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255,107,53,0.2);
-    }}
-    .cat-grid {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }}
-    .cat-card {{
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 10px;
-      padding: 12px 14px;
-      text-decoration: none;
-      color: #E8EAF0;
-      transition: all 0.2s;
-    }}
-    .cat-card:hover {{
-      border-color: rgba(255,107,53,0.35);
-      background: rgba(255,107,53,0.07);
-    }}
-    .cat-card-name {{
-      font-size: 0.8rem; font-weight: 600;
-      overflow: hidden; display: -webkit-box;
-      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-      line-height: 1.3; margin-bottom: 8px;
-    }}
-    .cat-card-cta {{
-      color: #FF6B35; font-size: 0.75rem; font-weight: 700;
-    }}
-
-    .card-img {{
-      width: 60px; height: 60px; border-radius: 10px;
-      background-size: cover; background-position: center;
-      margin-right: 12px; flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,0.05);
-    }}
-    .no-img {{ display: flex; align-items: center; justify-content: center; background: rgba(255,107,53,0.05); font-size: 1.2rem; }}
-    
-    .cat-img {{
-      width: 100%; height: 90px; border-radius: 8px;
-      background-size: cover; background-position: center;
-      margin-bottom: 8px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }}
-
-    /* ── FOOTER ── */
-    .footer {{
-      text-align: center; margin-top: 48px;
-      color: #3D4050; font-size: 0.72rem;
-    }}
-    .footer a {{ color: #FF6B35; text-decoration: none; }}
-  </style>
-</head>
-<body>
-
-  <!-- HERO -->
-  <div class="hero {banner_class}">
-    <div class="hero-avatar">🔥</div>
-    <h1 class="hero-title">{titulo}</h1>
-    <p class="hero-sub">{subtitulo}</p>
-    <span class="hero-badge">⚡ Atualizado automaticamente · {agora.strftime('%d/%m/%Y %H:%M')}</span>
-  </div>
-
-  <!-- CONTEÚDO -->
-  <div class="container">
-
-    <!-- Coleções -->
-    {"" if not colecoes_html else f'''
-    <div class="section">
-      <p class="section-title">Minhas Coleções</p>
-      {colecoes_html}
-    </div>
-    '''}
-
-    <!-- Produtos Recentes -->
-    {"" if not cards_html else f'''
-    <div class="section">
-      <p class="section-title">Achados Recentes</p>
-      {cards_html}
-    </div>
-    '''}
-
-    <!-- Por Categoria -->
-    {"" if not cats_html else f'''
-    <div class="section">
-      <p class="section-title">Por Categoria</p>
-      {cats_html}
-    </div>
-    '''}
-
-    {"<div style='text-align:center;padding:60px 20px;color:#3D4050;'>Nenhum produto aprovado ainda. O robô está caçando as melhores ofertas! 🤖</div>" if not recentes else ""}
-
-    <div class="footer">
-      <p>Gerado por <a href="https://github.com/BarbaraVSilva/VitrineSIAA">SIAA-2026</a> · Sistema Inteligente de Automação de Afiliados</p>
-    </div>
-  </div>
-
-</body>
-</html>"""
+    html = build_vitrine_page_html(
+        theme=theme,
+        agora=agora,
+        recentes=recentes,
+        colecoes_html=colecoes_html,
+        cards_html=cards_html,
+        cats_html=cats_html,
+        titulo=titulo,
+        subtitulo=subtitulo,
+        banner_class=banner_class,
+    )
 
     vitrine_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../vitrine'))
     os.makedirs(vitrine_dir, exist_ok=True)

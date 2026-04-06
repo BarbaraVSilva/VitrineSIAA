@@ -1,12 +1,20 @@
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from dotenv import load_dotenv
+
+load_dotenv()
+TOKEN = (os.getenv("META_ACCESS_TOKEN") or "").strip()
+IG_ID = (os.getenv("IG_USER_ID") or "").strip()
+if not TOKEN or not IG_ID:
+    sys.exit("Defina META_ACCESS_TOKEN e IG_USER_ID no .env")
+
 import requests
 
-TOKEN = "EAARpqF7rfooBRLS3Tl33PNDK4ZB7EZClhiOguBQC4tviUC6bSc04bUvO9f4k1LPF9osINp92vuC00JfNZBTktrmtGCaQJAMY3GoJfHjDRr38IdS9ZBe9okZAkZBO7yQIIRIjS4hWQJxptybxXZCZBGlCCEy8jIDGlZBkvmWVgctEHwpRZCrbk3GEiq2T2u41aEUfotUiE2rBLdNRDHclszmwn4i9r5xyGS423DA5MufJfEUU6UNZAqFBCBEdGM7VtmkheRPkM3nXMcIC5dI2AmrjocNLAZDZD"
-IG_ID = "17841440746815302"
-
-def check_ig_id():
-    url = f"https://graph.facebook.com/v20.0/{IG_ID}?fields=username,name&access_token={TOKEN}"
-    res = requests.get(url)
-    print(res.json())
-
-if __name__ == "__main__":
-    check_ig_id()
+r = requests.get(
+    f"https://graph.facebook.com/v20.0/{IG_ID}",
+    params={"fields": "username,name", "access_token": TOKEN},
+    timeout=30,
+)
+print(r.status_code, r.text)

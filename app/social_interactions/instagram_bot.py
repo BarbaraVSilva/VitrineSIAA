@@ -23,7 +23,7 @@ if sys.platform == "win32":
 
 app = FastAPI(title="SIAA Auto-DM Bot (ManyChat Clone)")
 
-META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN", "siaa_super_secret")
+META_VERIFY_TOKEN = (os.getenv("META_VERIFY_TOKEN") or "").strip()
 META_ACCESS_TOKEN = os.getenv("META_ACCESS_TOKEN", "")
 META_PAGE_ID = os.getenv("META_PAGE_ID", "")
 GRAPH_URL = "https://graph.instagram.com/v25.0"
@@ -107,6 +107,9 @@ def buscar_link_produto(prod_id: str | None) -> tuple[str, int | None]:
 @app.get("/webhook")
 async def verify_webhook(request: Request):
     """Validação obrigatória do Meta Developers."""
+    if not META_VERIFY_TOKEN:
+        return {"status": "error", "message": "META_VERIFY_TOKEN não configurado no .env"}, 503
+
     params = request.query_params
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")

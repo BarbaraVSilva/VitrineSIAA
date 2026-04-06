@@ -70,10 +70,10 @@ def create_video_variant(base_video_path: str, hook: dict, variant_index: int, o
 
 def run_5_videos_pipeline(base_video_path: str, product_name: str, product_desc: str, price: str, product_id: int):
     """Orquestra a estratégia de 5 vídeos/dia para o produto."""
-    from app.mineracao.hook_generator import generate_hooks
-    
+    from app.mineracao.hook_generator import generate_video_variant_hooks
+
     print(f"\n🔄 Iniciando Fábrica de Hooks (5 Variantes) para [{product_name}]...")
-    hooks = generate_hooks(product_name, product_desc, price)
+    hooks = generate_video_variant_hooks(product_name, product_desc, price)
     
     output_dir = os.path.join("vitrine", "videos_bulk", f"prod_{product_id}")
     
