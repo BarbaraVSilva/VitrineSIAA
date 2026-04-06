@@ -4,18 +4,25 @@ import requests
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
 import uuid
+import sys
+import logging
+import socket
 
 # Corrige imports para ser executado da raiz do projeto
-import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.core.repository import AchadosRepository
 from app.social_interactions.instagram_bot import detectar_gatilho, send_private_dm, post_public_reply
 from app.core.logger import log_event
-import logging
+from app.core.downloader import downloader
+from app.mineracao.hook_generator import generate_hooks
+from app.social_interactions.evolution_api import whatsapp
+from typing import Optional
 
 class WhatsAppMessage(BaseModel):
     event: str
@@ -23,8 +30,25 @@ class WhatsAppMessage(BaseModel):
 
 app = FastAPI(title="SIAA-2026 Webhooks Server")
 
+# ─────────────────────────────────────────────
+#  SERVE DASHBOARD & STATIC FILES
+# ─────────────────────────────────────────────
+@app.get("/pro", include_in_schema=False)
+async def serve_pro_dashboard():
+    # Caminho corrigido para localizar o arquivo na pasta app/dashboard
+    dashboard_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "dashboard", "pro_dashboard.html"))
+    if os.path.exists(dashboard_path):
+        return FileResponse(dashboard_path)
+    return Response(content="Dashboard file not found at " + dashboard_path, status_code=404)
+
+# Permitir acesso a mídias para visualização no Dashboard
+proj_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+media_path = os.path.join(proj_root, "media")
+os.makedirs(media_path, exist_ok=True)
+app.mount("/media", StaticFiles(directory=media_path), name="media")
+
 # Segurança de Mercado: Middleware e Headers
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"]) # Ajustar para o seu domínio em produção
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # Ajustar para a URL da sua vitrine
@@ -166,5 +190,82 @@ async def process_whatsapp_scraper(payload: WhatsAppMessage):
         log_event(f"Erro no processamento do webhook WhatsApp: {str(e)}", component="WebhookWhatsApp", event="WEBHOOK_ERROR", status="ERROR", level=logging.ERROR)
         return Response(content='{"error": "Internal Server Error"}', status_code=500, media_type="application/json")
 
+# ═══════════════════════════════════════
+#   PRO DASHBOARD API ENDPOINTS
+# ═══════════════════════════════════════
+
+class DownloadRequest(BaseModel):
+    url: str
+
+class CopyRequest(BaseModel):
+    description: str
+    style: str = "Padrao"
+
+class WhatsAppRequest(BaseModel):
+    number: str
+    text: str
+    media_url: Optional[str] = None
+
+@app.get("/api/achados")
+async def list_achados():
+    repo = AchadosRepository()
+    return repo.get_pending()
+
+@app.post("/api/download")
+async def api_download(req: DownloadRequest):
+    try:
+        url = req.url
+        if "shopee" in url:
+            path = await downloader.scrape_shopee_video(url)
+        else:
+            path = await downloader.download_social_video(url)
+            
+        if path:
+            # Salva como achado PENDING para aparecer no Dashboard
+            repo = AchadosRepository()
+            repo.add_achado("Download Manual", path, url, status="PENDING", categoria="Manual")
+            return {"status": "success", "path": path}
+        return {"status": "error", "message": "Falha no download"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/generate-copy")
+async def api_copy(req: CopyRequest):
+    try:
+        hooks = generate_hooks(req.description, style=req.style)
+        return {"status": "success", "hooks": hooks}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/whatsapp/send")
+async def api_whatsapp(req: WhatsAppRequest):
+    try:
+        if req.media_url:
+            res = await whatsapp.send_media(req.number, req.media_url, req.text)
+        else:
+            res = await whatsapp.send_text(req.number, req.text)
+        return {"status": "success", "response": res}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/access-info")
+async def get_access_info():
+    """Retorna o IP da rede local e Tailscale para facilitar a conexão mobile."""
+    try:
+        # Tenta descobrir o IP primário
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip_local = s.getsockname()[0]
+        s.close()
+    except:
+        ip_local = "localhost"
+    
+    return {
+        "status": "success",
+        "ip_local": ip_local,
+        "tailscale_ip": os.getenv("TAILSCALE_IP", "Não Configurado"),
+        "mobile_url": f"http://{ip_local}:8088/pro"
+    }
+
 if __name__ == "__main__":
-    uvicorn.run("webhook_server:app", host="0.0.0.0", port=6000, reload=True)
+    uvicorn.run("webhook_server:app", host="0.0.0.0", port=8088, reload=True)

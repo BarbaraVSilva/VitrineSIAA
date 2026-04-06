@@ -72,6 +72,11 @@ st.markdown("""
     <h1 style="margin:0;font-size:1.9rem;font-weight:800;color:#FFFFFF;letter-spacing:-0.02em;">SIAA <span style="color:#FF6B35;">2026</span></h1>
     <p style="margin:0;color:#8B90A0;font-size:0.9rem;margin-top:4px;">Sistema Inteligente de Automação de Afiliados · Painel de Comando</p>
   </div>
+  <div style="margin-left:auto;">
+    <a href="http://localhost:8088/pro" target="_blank" style="text-decoration:none;">
+      <div style="background:rgba(255,107,53,0.15);border:1px solid #FF6B35;padding:10px 20px;border-radius:12px;color:#FF6B35;font-weight:700;font-size:0.9rem;">🚀 ABRIR MASTER HUB</div>
+    </a>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -355,25 +360,24 @@ with tab_studio:
 
     st.divider()
 
-    # ── Kanban Multi-Coluna ──
-    st.markdown("#### 🗂️ Kanban de Conteúdo")
+    # ── Kanban em Abas (Melhor Redimensionamento) ──
+    st.markdown("#### 🗂️ Fluxo do Estúdio")
     
-    # Criamos colunas para as etapas
-    k_cols = st.columns(len(ETAPAS))
+    # Substituindo st.columns por st.tabs para melhor uso do espaço
+    tab_etapas = st.tabs([f"{e} ({len(get_achados_por_status(e))})" for e in ETAPAS])
     
     for i, etapa in enumerate(ETAPAS):
         cor, bg = ETAPA_COR[etapa]
         cards = get_achados_por_status(etapa)
         
-        with k_cols[i]:
+        with tab_etapas[i]:
             st.markdown(f"""
-            <div style="background:{bg};border-bottom:2px solid {cor};border-radius:10px 10px 0 0;padding:8px;text-align:center;margin-bottom:12px;">
-              <b style="color:{cor};font-size:0.85rem;">{etapa.upper()}</b>
-              <br><span style="color:#8B90A0;font-size:0.7rem;">{len(cards)} itens</span>
+            <div style="background:{bg};border-bottom:2px solid {cor};border-radius:10px;padding:12px;text-align:center;margin-bottom:20px;">
+              <b style="color:{cor};font-size:1.1rem;">{etapa.upper()}</b>
             </div>""", unsafe_allow_html=True)
             
             if not cards:
-                st.markdown("<p style='color:#8B90A0;font-size:0.75rem;text-align:center;opacity:0.5;padding:20px 0;'>Vazio</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#8B90A0;font-size:0.85rem;text-align:center;opacity:0.5;padding:30px 0;'>🏜️ Nenhum item em {etapa}</p>", unsafe_allow_html=True)
                 continue
 
             for row in cards:

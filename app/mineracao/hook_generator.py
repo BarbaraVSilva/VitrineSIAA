@@ -6,9 +6,10 @@ from app.core.logger import log_event
 
 load_dotenv()
 
-def generate_hooks(product_desc: str) -> dict:
+def generate_hooks(product_desc: str, style: str = "Padrao") -> dict:
     """
-    Usa o Google Gemini para gerar 3 categorias de copy para um produto da Shopee.
+    Usa o Google Gemini para gerar ganchos (copies) específicos com base no estilo solicitado.
+    Estilos: "Flash Sale", "Lancamento", "Escassez", "Padrao"
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -20,16 +21,22 @@ def generate_hooks(product_desc: str) -> dict:
     
     prompt = f"""
 Você é um Copywriter Especialista em Marketing de Afiliados de alta conversão.
-Sua tarefa é ler sobre este achadinho da Shopee e gerar três roteiros/legendas distintos, otimizados para plataformas específicas.
+Sua tarefa é gerar três roteiros/legendas otimizados para converter esse achadinho da Shopee.
 
+- Estratégia solicitada: {style}
 - Dados capturados do produto:
 {product_desc}
 
-Gere APENAS um JSON com 3 chaves. Sem formatações markdown envolta:
+Diretrizes Baseadas em Gatilhos Mentais:
+1. "Escassez": Foque no tempo limitado e poucas unidades. Use 'Últimas 5 unidades', 'O estoque já está acabando'.
+2. "Flash Sale": Foque na oportunidade única de preço baixo. Use 'Preço de custo', 'Menor preço do ano'.
+3. "Lancamento": Foque na novidade e exclusividade. Use 'Acabou de chegar', 'Ninguém tem nada igual'.
+
+Gere APENAS um JSON com 3 chaves (sem blocos markdown):
 {{
-  "instagram_reels": "Legenda focada em Desejo e Estética (Lifestyle, use emojis elegantes, foque no quão lindo e útil é). Termine com 'Link na bio ou comenta QUERO'. Inclua 3 ashtags de nicho.",
-  "tiktok": "Legenda e roteiro de som (VO) focado em Curiosidade e 'Life Hack' (Rápido, chocante, direto). Ex: 'A Shopee enlouqueceu com isso...'. Termine com 'Link no perfil'.",
-  "whatsapp": "Texto curto para grupos focado na Urgência, Preço e Oferta Relâmpago. Formatação clara, use emojis dinâmicos (🚨, 🔥). Termine com chamada para o link."
+  "instagram_reels": "Legenda focada em Desejo e Estética.",
+  "tiktok": "Roteiro e legenda focado em Curiosidade e viralismo.",
+  "whatsapp": "Texto curto para grupos focado em Clique e Venda Imediata."
 }}
 """
 
@@ -37,14 +44,12 @@ Gere APENAS um JSON com 3 chaves. Sem formatações markdown envolta:
         response = model.generate_content(prompt)
         content = response.text.strip()
         
-        # Limpa possíveis blocos de código markdown que o Gemini possa retornar
-        if content.startswith("```json"):
+        if "```json" in content:
             content = content.replace("```json", "", 1).replace("```", "", 1).strip()
-        elif content.startswith("```"):
+        elif "```" in content:
             content = content.replace("```", "", 2).strip()
             
         hooks = json.loads(content)
-        
         return hooks
         
     except Exception as e:

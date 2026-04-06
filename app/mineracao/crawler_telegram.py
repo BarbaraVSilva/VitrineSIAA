@@ -1,8 +1,15 @@
 import os
 import re
+import sys
 import asyncio
 from telethon import TelegramClient, events
 from dotenv import load_dotenv
+
+# Força UTF-8 no terminal Windows para evitar erros de charmap com emojis
+if sys.platform == "win32":
+    import codecs
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
 
 load_dotenv()
 
@@ -186,10 +193,27 @@ async def watcher_loop():
 
 async def main():
     print(f"Iniciando o Crawler. Monitorando os canais/grupos: {', '.join(TARGET_CHANNELS)}")
-    # Irá pedir o código enviado pro celular apenas na primeira vez
     await client.start(phone=PHONE)
-    print("Conectado! Verificando configurações de histórico...")
+    print("Conectado! Verificando convites e acessos...")
     
+    # Tenta entrar nos canais se forem hashes de convite
+    from telethon.tl.functions.messages import ImportChatInviteRequest
+    from telethon.errors import UserAlreadyParticipantError, InviteHashExpiredError
+    
+    for channel in TARGET_CHANNELS:
+        # Se parecer um hash de convite (sem @ e sem ser número puro)
+        if not channel.startswith('@') and not channel.replace('-','').isdigit() and len(channel) > 10:
+            try:
+                print(f"Tentando entrar no canal via convite: {channel}")
+                await client(ImportChatInviteRequest(channel))
+                print(f"✅ Sucesso ao entrar no canal: {channel}")
+            except UserAlreadyParticipantError:
+                print(f"ℹ️ Já participamos do canal: {channel}")
+            except InviteHashExpiredError:
+                print(f"⚠️ Convite expirado para o canal: {channel}")
+            except Exception as e:
+                print(f"❌ Erro ao processar convite {channel}: {e}")
+
     # 1. Recuperar histórico anterior inicial
     await fetch_history()
                 

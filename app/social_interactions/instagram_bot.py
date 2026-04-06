@@ -12,7 +12,14 @@ import os
 import requests
 import re
 import sqlite3
+import sys
 from app.core.database import get_connection
+
+# Força UTF-8 no terminal Windows para evitar erros de charmap com emojis
+if sys.platform == "win32":
+    import codecs
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
 
 app = FastAPI(title="SIAA Auto-DM Bot (ManyChat Clone)")
 

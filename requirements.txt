@@ -16,3 +16,5 @@ google-generativeai
 pydantic
 playwright
 openai
+yt-dlp
+aiohttp

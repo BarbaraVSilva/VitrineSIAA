@@ -33,7 +33,7 @@ def setup_logger(name="SIAA-2026"):
         log_dir = os.path.join(os.getcwd(), "logs")
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        file_handler = logging.FileHandler(os.path.join(log_dir, "siaa_structured.json"))
+        file_handler = logging.FileHandler(os.path.join(log_dir, "siaa_structured.json"), encoding='utf-8')
         file_handler.setFormatter(JSONFormatter())
         logger.addHandler(file_handler)
         
