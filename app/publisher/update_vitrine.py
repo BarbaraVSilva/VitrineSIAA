@@ -1,5 +1,10 @@
 import os
 import sys
+# Força UTF-8 no terminal Windows
+if sys.platform == "win32":
+    import codecs
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    sys.stderr = codecs.getwriter("utf-8")(sys.stderr.detach())
 import datetime
 import html
 import subprocess
@@ -91,7 +96,7 @@ def generate_html_vitrine():
         midia_url = ""
         if midia and os.path.exists(midia) and not midia.lower().endswith(('.mp4','.mov')):
             import shutil
-            assets_dir = os.path.join(os.path.dirname(__file__), '../../vitrine/media')
+            assets_dir = os.path.join(_proj_root, 'media')
             os.makedirs(assets_dir, exist_ok=True)
             fname = os.path.basename(midia)
             shutil.copy2(midia, os.path.join(assets_dir, fname))
@@ -183,21 +188,19 @@ def generate_html_vitrine():
         banner_class=banner_class,
     )
 
-    vitrine_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../vitrine'))
-    os.makedirs(vitrine_dir, exist_ok=True)
-    html_path = os.path.join(vitrine_dir, 'index.html')
+    html_path = os.path.join(_proj_root, 'index.html')
     with open(html_path, 'w', encoding='utf-8') as f:
         f.write(html)
 
     total = len(recentes)
     print(f"[VITRINE] Linktree Premium gerado com {total} produto(s).")
-    git_push_vitrine(vitrine_dir)
+    git_push_vitrine(_proj_root)
 
 def git_push_vitrine(work_dir):
     try:
         orig = os.getcwd()
         os.chdir(work_dir)
-        subprocess.run(["git", "add", "index.html"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "add", "index.html", "media/"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["git", "commit", "-m", "Auto-update Vitrine VIP"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(["git", "push"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         os.chdir(orig)

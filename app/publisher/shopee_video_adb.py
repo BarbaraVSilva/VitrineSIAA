@@ -9,8 +9,11 @@ class ShopeeVideoADB:
     """
     
     def __init__(self, device_id=None):
+        from dotenv import load_dotenv
+        load_dotenv()
+        adb_path = os.getenv("ADB_PATH", "adb")
         self.device_id = device_id
-        self.cmd_prefix = f"adb -s {device_id} " if device_id else "adb "
+        self.cmd_prefix = f'"{adb_path}" -s {device_id} ' if device_id else f'"{adb_path}" '
         
     def _run_cmd(self, cmd):
         full_cmd = self.cmd_prefix + cmd
@@ -20,7 +23,12 @@ class ShopeeVideoADB:
     def is_device_ready(self):
         res = self._run_cmd("devices")
         lines = res.stdout.strip().split('\n')
-        return len(lines) > 1
+        if len(lines) > 1:
+            return True
+        else:
+            print("[ADB DEBUG] stdout:", res.stdout)
+            print("[ADB DEBUG] stderr:", res.stderr)
+            return False
 
     def push_video(self, local_path, remote_path="/sdcard/DCIM/SIAA_TEMP.mp4"):
         print(f"[ADB] Enviando vídeo para o dispositivo: {local_path} -> {remote_path}")
@@ -36,7 +44,7 @@ class ShopeeVideoADB:
 
     def tap(self, x, y):
         self._run_cmd(f"shell input tap {x} {y}")
-        time.sleep(1.5)
+        time.sleep(3.0)
 
     def type_text(self, text):
         # Substitui espaços por %s para o comando input text do ADB
@@ -80,16 +88,16 @@ if __name__ == "__main__":
     # Coordenadas de exemplo (devem ser calibradas pelo usuário de acordo com o celular)
     # Use 'adb shell uiautomator dump' para encontrar os elementos.
     COORDS_MOCK = {
-        'btn_plus': (540, 2200),
-        'btn_shopee_video': (800, 2000),
-        'btn_gallery': (100, 2100),
-        'first_video': (200, 400),
-        'btn_next': (950, 2200),
+        'btn_plus': (540, 2220),
+        'btn_shopee_video': (200, 2150),
+        'btn_gallery': (900, 2100),
+        'first_video': (250, 450),
+        'btn_next': (900, 2200),
         'field_caption': (300, 500),
-        'btn_publish': (540, 2300)
+        'btn_publish': (900, 2200)
     }
     
-    bot = ShopeeVideoADB()
+    bot = ShopeeVideoADB(device_id="RQGYC03FJYY")
     if bot.is_device_ready():
         # bot.publish_flow("path/to/vid.mp4", "Oferta TOP #shopee", COORDS_MOCK)
         print("Dispositivo pronto para automação Shopee Video via ADB!")
