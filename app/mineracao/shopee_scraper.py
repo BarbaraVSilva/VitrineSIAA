@@ -23,23 +23,21 @@ def _download_file(url: str, ext: str) -> str:
         log_event(f"Erro ao baixar mídia {url}: {e}", component="ShopeeScraper", event="MEDIA_DL_ERROR", status="ERROR", level=40)
         return ""
 
-def scrape_shopee_media(shopee_url: str) -> str:
+def scrape_shopee_data(shopee_url: str, extract_media: bool = True) -> dict:
     """
-    Acessa a URL da Shopee (lida com redirecionamentos) usando Playwright.
-    Busca preferencialmente a tag <video> e depois a imagem de capa.
-    Retorna o caminho local local_path do arquivo baixado (ou "" se falhar).
+    Acessa a URL da Shopee usando Playwright.
+    Extrai o Título, Preço e (opcionalmente) mídia (vídeo ou capa).
     """
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
         log_event("Playwright não instalado. Scraper falhou.", component="ShopeeScraper", status="ERROR")
-        return ""
+        return {"path": "", "titulo": "", "preco": ""}
 
-    local_path = ""
+    resultado = {"path": "", "titulo": "", "preco": ""}
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        # Contexto persistente na memoria para não carregar cookies toda vez
         context = browser.new_context(
              user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
@@ -48,52 +46,57 @@ def scrape_shopee_media(shopee_url: str) -> str:
         try:
             log_event(f"Iniciando scrape na URL: {shopee_url}", component="ShopeeScraper", event="START_SCRAPE", status="INFO")
             page.goto(shopee_url, timeout=30000, wait_until="domcontentloaded")
-            
-            # Aguarda um pouco por conta da re-renderização pesada do React da Shopee
             page.wait_for_timeout(4000)
             
-            # 1. Tentar achar VÍDEO
-            video_element = page.query_selector("video")
-            if video_element:
-                video_src = video_element.get_attribute("src")
-                if video_src and video_src.startswith("http"):
-                    log_event("Vídeo encontrado!", component="ShopeeScraper", event="VIDEO_FOUND", status="SUCCESS")
-                    local_path = _download_file(video_src, ".mp4")
-                    
-                    if local_path:
-                        browser.close()
-                        return local_path
-            
-            # 2. Tentar achar IMAGEM PRINCIPAL
-            # A Shopee sempre usa classes reativas malucas, então tentaremos pegar a imagem maior do carrossel.
-            images = page.query_selector_all("img")
-            best_img_src = ""
-            for img in images:
-                src = img.get_attribute("src")
-                # As imagens oficiais de capa da Shopee ficam no domínio susercontent
-                if src and "susercontent.com" in src and "/file/" in src:
-                    # Se tiver o _tn no final da capa (thumbnail), removemos para ter alta resolução
-                    if src.endswith("_tn"):
-                        src = src[:-3]
-                    best_img_src = src
-                    break
-                    
-            if best_img_src:
-                log_event("Imagem de capa encontrada!", component="ShopeeScraper", event="IMG_FOUND", status="SUCCESS")
-                local_path = _download_file(best_img_src, ".jpg")
-            else:
-                log_event("Nenhuma mídia de alta qualidade extraída.", component="ShopeeScraper", event="NO_MEDIA_FOUND", status="WARNING")
+            # 1. Extração de Texto (Título e Preço)
+            try:
+                # O título geralmente fica num span ou div grande na shopee
+                title_el = page.query_selector("span[class*='S'] > span, div[class*='S'] > span, h1")
+                if title_el:
+                    resultado["titulo"] = title_el.inner_text().strip()
+                
+                # Preço
+                price_el = page.query_selector("div[class*='pq'] > div, div.flex.items-center > div > div.text-xl")
+                if price_el:
+                    resultado["preco"] = price_el.inner_text().strip()
+            except Exception as e:
+                log_event(f"Aviso ao extrair textos: {e}", component="ShopeeScraper", status="WARNING")
+
+            # 2. Extração de Mídia
+            if extract_media:
+                video_element = page.query_selector("video")
+                if video_element:
+                    video_src = video_element.get_attribute("src")
+                    if video_src and video_src.startswith("http"):
+                        log_event("Vídeo encontrado!", component="ShopeeScraper", event="VIDEO_FOUND", status="SUCCESS")
+                        resultado["path"] = _download_file(video_src, ".mp4")
+                        
+                if not resultado.get("path"):
+                    images = page.query_selector_all("img")
+                    best_img_src = ""
+                    for img in images:
+                        src = img.get_attribute("src")
+                        if src and "susercontent.com" in src and "/file/" in src:
+                            if src.endswith("_tn"):
+                                src = src[:-3]
+                            best_img_src = src
+                            break
+                            
+                    if best_img_src:
+                        log_event("Imagem de capa encontrada!", component="ShopeeScraper", event="IMG_FOUND", status="SUCCESS")
+                        resultado["path"] = _download_file(best_img_src, ".jpg")
+                    else:
+                        log_event("Nenhuma mídia extraída.", component="ShopeeScraper", event="NO_MEDIA_FOUND", status="WARNING")
         
         except Exception as e:
-             log_event(f"Erro ao navegar na página da Shopee: {e}", component="ShopeeScraper", event="NAV_ERROR", status="ERROR", level=40)
+             log_event(f"Erro ao navegar: {e}", component="ShopeeScraper", event="NAV_ERROR", status="ERROR", level=40)
         
         finally:
             browser.close()
             
-    return local_path
+    return resultado
 
 if __name__ == "__main__":
-    # Test
     url_mock = "https://shopee.com.br/product/1254184335/20199608460"
-    path = scrape_shopee_media(url_mock)
-    print("Downloaded to:", path)
+    data = scrape_shopee_data(url_mock)
+    print("Scrape data:", data)

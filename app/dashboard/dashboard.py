@@ -91,20 +91,27 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ─────────────────────────────────────────────
 #  ABAS PRINCIPAIS
 # ─────────────────────────────────────────────
-tab_studio, tab_vitrine, tab_camp, tab_cupons, tab_banco, tab_eng, tab_online = st.tabs([
-    "🎬  Estúdio de Conteúdo",
-    "📊  Vitrine & Logs",
-    "📅  Campanhas",
-    "🎟️  Cupons",
-    "🗂️  Banco de Mídias",
-    "💬  Engajamento",
-    "🌐  Vitrine Online",
-])
+
+# ─────────────────────────────────────────────
+#  MENU LATERAL PRINCIPAL
+# ─────────────────────────────────────────────
+st.sidebar.markdown('## 🧭 Navegação SIAA')
+MENU_OPTIONS = [
+    '🏡 Início',
+    '🎬 Estúdio de Conteúdo',
+    '🗂️ Banco de Mídias',
+    '💬 Automações & Engajamento',
+    '⚙️ Configurações Extra'
+]
+menu_selecionado = st.sidebar.radio('Navegue:', MENU_OPTIONS)
+st.sidebar.markdown('---')
+st.sidebar.caption('SIAA 2026 Core v1.5')
+
 
 # ══════════════════════════════════════════════
 #  ABA 1 — ESTÚDIO DE CONTEÚDO
 # ══════════════════════════════════════════════
-with tab_studio:
+if menu_selecionado == '🎬 Estúdio de Conteúdo':
     # ── Cabeçalho ──
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(255,107,53,0.1),rgba(255,69,0,0.04));border:1px solid rgba(255,107,53,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
@@ -134,140 +141,65 @@ with tab_studio:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── IA Grouper ──
-    with st.expander("🪄 Sugestão de Carrosséis (IA)", expanded=True):
-        col_ai1, col_ai2 = st.columns([2, 1])
-        with col_ai1:
-            st.markdown("""
-            <div style="background:rgba(167,139,250,0.05);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:12px;">
-              <p style="color:#A78BFA;font-weight:700;margin:0;font-size:0.9rem;">✨ Agrupador Inteligente</p>
-              <p style="color:#8B90A0;font-size:0.8rem;margin:4px 0 0;">O Gemini analisa seus achados pendentes e cria coleções temáticas para carrosséis.</p>
-            </div>""", unsafe_allow_html=True)
-        with col_ai2:
-            if st.button("🚀 Rodar Agrupamento IA", use_container_width=True, type="primary"):
-                with st.spinner("Analisando afinidades..."):
-                    from app.mineracao.grouper import group_achados_with_ai
-                    if group_achados_with_ai():
-                        st.success("Grupos atualizados!")
-                        st.rerun()
-                    else: st.warning("Itens insuficientes para agrupar.")
-
-    # ── Bulk Approval ──
-    conn_b = get_connection(); cb = conn_b.cursor()
-    cb.execute("SELECT DISTINCT tema_grupo, grupo_id FROM achados WHERE grupo_id IS NOT NULL AND status = 'PENDING'")
-    grupos_pendentes = cb.fetchall()
-    conn_b.close()
-
-    if grupos_pendentes:
-        with st.expander("📦 Aprovação em Lote (Carrosséis/Grupos)", expanded=False):
-            for tema, gid in grupos_pendentes:
-                c1, c2 = st.columns([3, 1])
-                c1.markdown(f"**Tema:** {tema} (`{gid}`)")
-                if c2.button(f"✅ Aprovar Tudo", key=f"bulk_{gid}", type="primary"):
+    # ── FERRAMENTAS & CAPTURA (Toolbox) ──
+    with st.expander("🛠️ Ferramentas Rápidas & Captura", expanded=False):
+        t1, t2, t3 = st.columns(3)
+        
+        with t1:
+            st.markdown("**🪄 Organização IA**")
+            if st.button("🚀 Rodar Agrupador", use_container_width=True, help="Gemini cria carrosséis automáticos"):
+                from app.mineracao.grouper import group_achados_with_ai
+                if group_achados_with_ai(): st.success("Grupos Atualizados!"); st.rerun()
+            
+            # Bulk Approval
+            conn_b = get_connection(); cb = conn_b.cursor()
+            cb.execute("SELECT DISTINCT tema_grupo, grupo_id FROM achados WHERE grupo_id IS NOT NULL AND status = 'PENDING'")
+            grupos_pendentes = cb.fetchall()
+            conn_b.close()
+            if grupos_pendentes:
+                st.info(f"{len(grupos_pendentes)} grupos aguardando.")
+                if st.button("✅ Aprovar Todos os Grupos", key="bulk_all"):
                     conn_ap = get_connection(); cap = conn_ap.cursor()
-                    cap.execute("UPDATE achados SET status='APPROVED', status_fluxo='Pronto' WHERE grupo_id=?", (gid,))
-                    # Inserir na vitrine também
-                    cap.execute("SELECT id, link_original, categoria FROM achados WHERE grupo_id=?", (gid,))
-                    for aid, link, cat in cap.fetchall():
-                        # Injeta Sub-ID para Analytics de Lote
-                        link_af = get_affiliate_link(link, sub_id=f"bulk_a{aid}_studio") if link else f"https://shope.ee/default_{aid}"
-                        cap.execute("INSERT OR IGNORE INTO produtos (achado_id,link_afiliado,nome_produto,categoria) VALUES(?,?,?,?)",
-                                   (aid, link_af, f"Oferta #{aid}", cat or "Geral"))
+                    cap.execute("UPDATE achados SET status='APPROVED', status_fluxo='Pronto' WHERE grupo_id IS NOT NULL AND status='PENDING'")
                     conn_ap.commit(); conn_ap.close()
-                    st.success(f"Grupo {tema} aprovado!")
-                    st.rerun()
+                    st.success("Tudo Aprovado!"); st.rerun()
 
-    # ── Limpeza da Fila PENDENTE ──
-    with st.expander("🗑️ Limpar Fila PENDENTE", expanded=False):
-        st.write("Descartar **TODOS** os vídeos/produtos que estão aguardando triagem. Útil para limpar lixo mineral.")
-        if st.button("🚨 Ocultar Todos os Pendentes", type="primary"):
-            conn_cl = get_connection()
-            c_cl = conn_cl.cursor()
-            c_cl.execute("UPDATE achados SET status='REJECTED', status_fluxo='Postado' WHERE status='PENDING'")
-            conn_cl.commit()
-            conn_cl.close()
-            st.success("Fila limpa! Todos os pendentes foram descartados.")
-            st.rerun()
-
-    # ── Seção de Captura ──
-    st.markdown("#### 📥 Capturar Conteúdo")
-    cap_col1, cap_col2 = st.columns([1, 2])
-
-    with cap_col1:
-        st.markdown("""
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;">
-          <p style="color:#FF6B35;font-weight:700;margin:0 0 8px;font-size:0.9rem;">🤖 Varredura Automática</p>
-          <p style="color:#8B90A0;font-size:0.8rem;margin:0;">Dispara o crawler do Telegram nas últimas 24h.</p>
-        </div>""", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("📡 Escanear Últimas 24h", type="primary", use_container_width=True, key="btn_scan_tg_24"):
-            try:
+        with t2:
+            st.markdown("**📡 Scanner Telegram**")
+            if st.button("📡 Buscar Últimas 24h", type="primary", use_container_width=True):
                 open(os.path.join(proj_root, ".trigger_scrape_24h"), "w").close()
-                st.success("✅ Sinal enviado (24h)! O crawler inicia em instantes.")
-            except Exception as e:
-                st.error(f"Erro: {e}")
+                st.success("Sinal enviado!")
+            
+            st.markdown("**🗑️ Limpeza**")
+            if st.button("🚨 Ocultar Pendentes", use_container_width=True):
+                conn_cl = get_connection(); c_cl = conn_cl.cursor()
+                c_cl.execute("UPDATE achados SET status='REJECTED', status_fluxo='Postado' WHERE status='PENDING'")
+                conn_cl.commit(); conn_cl.close()
+                st.success("Fila limpa!"); st.rerun()
 
-    with cap_col2:
-        with st.expander("➕ Adicionar Conteúdo Manualmente", expanded=False):
-            with st.form("form_add_manual", clear_on_submit=True):
+        with t3:
+            st.markdown("**➕ Adição Manual**")
+            if st.button("📦 Abrir Formulário", use_container_width=True):
+                st.session_state["show_manual_form"] = not st.session_state.get("show_manual_form", False)
+
+        if st.session_state.get("show_manual_form", False):
+            st.divider()
+            with st.form("form_add_manual_new", clear_on_submit=True):
                 st.markdown("##### 📦 Dados do Produto")
-                c_l, c_n = st.columns(2)
-                link_m = c_l.text_input("🔗 Link (Shopee):", placeholder="https://shope.ee/…")
-                nome_m = c_n.text_input("📦 Nome curto:", placeholder="Ex: Fone JBL Tune 510BT")
-                desc_m = st.text_area("📝 Legenda / Descrição:", placeholder="Texto base para as copies…", height=80)
-
-                c_cat, c_tipo = st.columns(2)
-                cat_m = c_cat.selectbox("Categoria:", ["Geral","Tecnologia","Casa","Moda","Beleza","Pet","Outros"], key="cat_m_sel")
-                tipo_m = c_tipo.selectbox("Tipo:", ["PRODUTO","COLECAO","CUPOM"], key="tipo_m_sel")
-
-                c_url, c_up = st.columns(2)
-                url_img_m = c_url.text_input("🖼️ URL da imagem:", placeholder="https://…")
-                upload_m = c_up.file_uploader("Ou upload:", type=["jpg","jpeg","png","webp","mp4","mov"], key="up_m")
-
-                c_b1, c_b2 = st.columns(2)
-                b1_m = c_b1.text_input("🔄 Link Reserva 1:", key="b1_m")
-                b2_m = c_b2.text_input("🔄 Link Reserva 2:", key="b2_m")
-
-                sub_m = st.form_submit_button("✅ Adicionar à Fila", type="primary", use_container_width=True)
-                if sub_m:
-                    if not link_m or not nome_m:
-                        st.error("Link e Nome são obrigatórios.")
-                    else:
-                        import requests as req_lib
-                        midia_salva = ""
-                        media_dir = os.path.join(proj_root, "media")
-                        os.makedirs(media_dir, exist_ok=True)
-                        if upload_m:
-                            ext = upload_m.name.split('.')[-1]
-                            fp = os.path.join(media_dir, f"manual_{uuid.uuid4().hex[:8]}.{ext}")
-                            with open(fp, "wb") as f: f.write(upload_m.read())
-                            midia_salva = fp
-                        elif url_img_m:
-                            try:
-                                r = req_lib.get(url_img_m, timeout=10)
-                                if r.status_code == 200:
-                                    ext = url_img_m.split('.')[-1].split('?')[0]
-                                    ext = ext if ext in ['jpg','jpeg','png','webp','mp4'] else 'jpg'
-                                    fp = os.path.join(media_dir, f"manual_{uuid.uuid4().hex[:8]}.{ext}")
-                                    with open(fp, "wb") as f: f.write(r.content)
-                                    midia_salva = fp
-                            except: pass
-                        legenda = desc_m if desc_m else f"{nome_m}\n\n🛍️ Link: {link_m}"
-                        conn5 = get_connection(); c5 = conn5.cursor()
-                        try:
-                            c5.execute("""INSERT INTO achados
-                                (texto_original,midia_path,link_original,link_backup_1,link_backup_2,
-                                 status,status_fluxo,categoria,tipo_link,compliance_status)
-                                VALUES(?,?,?,?,?,'PENDING','Ideia',?,?,'SEGURO')""",
-                                (legenda, midia_salva, link_m, b1_m or None, b2_m or None, cat_m, tipo_m))
-                        except Exception:
-                            c5.execute("INSERT INTO achados (texto_original,midia_path,link_original,status,status_fluxo) VALUES(?,?,?,'PENDING','Ideia')",
-                                       (legenda, midia_salva, link_m))
-                        conn5.commit()
-                        novo_id = c5.lastrowid; conn5.close()
-                        send_admin_log(f"➕ Produto manual #{novo_id} — {nome_m} adicionado ao Estúdio.")
-                        st.success(f"🎉 Produto #{novo_id} adicionado! Veja no Kanban abaixo.")
-                        st.rerun()
+                cl1, cl2 = st.columns(2)
+                l_m = cl1.text_input("🔗 Link (Shopee):")
+                n_m = cl2.text_input("📦 Nome curto:")
+                d_m = st.text_area("📝 Legenda:", height=80)
+                sub_new = st.form_submit_button("✅ Adicionar à Fila", type="primary", use_container_width=True)
+                if sub_new:
+                    if l_m and n_m:
+                        leg = d_m if d_m else f"{n_m}\n\n🛍️ Link: {l_m}"
+                        cn = get_connection(); cur = cn.cursor()
+                        cur.execute("INSERT INTO achados (texto_original,midia_path,link_original,status,status_fluxo) VALUES(?,NULL,?,'PENDING','Ideia')", (leg, l_m))
+                        cn.commit(); cn.close()
+                        st.success("Adicionado!"); st.rerun()
+                    else: st.error("Link e Nome obrigatórios.")
+    st.markdown("#### 🚀 Conteúdo Pendente (Triagem)")
 
     st.divider()
 
@@ -309,32 +241,50 @@ with tab_studio:
                 # Mídia
                 with col_md:
                     if midia and os.path.exists(midia):
-                        if midia.endswith((".mp4",".mov")):
+                        if midia.lower().endswith((".mp4",".mov")):
                             st.video(midia)
                         else:
-                            st.image(midia, use_container_width=True)
+                            try:
+                                st.image(midia, use_container_width=True)
+                            except Exception as e:
+                                st.error(f"⚠️ Mídia corrompida ou inválida: {os.path.basename(midia)}")
+                                st.caption("Tente Extrair Mídia HD para substituir o arquivo.")
                         with open(midia, "rb") as f_dl:
-                            ext_dl = "mp4" if midia.endswith((".mp4",".mov")) else "jpg"
+                            ext_dl = "mp4" if midia.lower().endswith((".mp4",".mov")) else "jpg"
                             st.download_button("📱 Baixar", data=f_dl,
                                 file_name=f"siaa_{a_id}.{ext_dl}", key=f"dl_{a_id}")
                     else:
                         st.markdown("""<div style='padding:30px;text-align:center;background:rgba(255,255,255,0.03);border-radius:12px;border:1px dashed rgba(255,255,255,0.1)'>
                           <p style='color:#8B90A0;margin:0;'>📷 Sem mídia</p></div>""", unsafe_allow_html=True)
 
-                    if link and st.button("🔍 Extrair Mídia HD", key=f"scrape_{a_id}"):
-                        with st.spinner("Buscando mídia…"):
+                    if link and st.button("🔍 Extrair Dados do Anúncio (Shopee)", key=f"scrape_{a_id}"):
+                        with st.spinner("Visitando a página oficial pra buscar título, preço e mídia…"):
                             try:
-                                from app.mineracao.shopee_scraper import scrape_shopee_media
-                                nm = scrape_shopee_media(link)
-                                if nm:
-                                    conn_s = get_connection(); cs = conn_s.cursor()
-                                    cs.execute("UPDATE achados SET midia_path=? WHERE id=?", (nm, a_id))
-                                    conn_s.commit(); conn_s.close()
-                                    st.success("Mídia extraída!"); st.rerun()
-                                else: st.warning("Não encontrada.")
+                                from app.mineracao.shopee_scraper import scrape_shopee_data
+                                # Se já tem mídia e só quer o texto, passa extract_media=False? 
+                                # O usuário deixou em aberto, então vamos tentar extrair sempre pra garantir a melhor qualidade.
+                                scrap_meta = scrape_shopee_data(link, extract_media=True)
+                                
+                                conn_s = get_connection(); cs = conn_s.cursor()
+                                msg_att = []
+                                
+                                if scrap_meta["titulo"]:
+                                    novo_texto = f"{scrap_meta['titulo']}\n\nPreço: {scrap_meta['preco']}\n\nLink: {link}"
+                                    cs.execute("UPDATE achados SET texto_original=? WHERE id=?", (novo_texto, a_id))
+                                    msg_att.append("Textos")
+                                    
+                                if scrap_meta["path"]:
+                                    cs.execute("UPDATE achados SET midia_path=? WHERE id=?", (scrap_meta["path"], a_id))
+                                    msg_att.append("Mídia")
+                                    
+                                conn_s.commit(); conn_s.close()
+                                if msg_att:
+                                    st.success(f"✅ Extraídos com sucesso: {', '.join(msg_att)}!"); st.rerun()
+                                else: 
+                                    st.warning("Não foi possível extrair novos dados (Anúncio excluido?).")
                             except Exception as e: st.error(str(e))
 
-                    if midia and not midia.endswith((".mp4",".mov")) and os.path.exists(midia):
+                    if midia and not midia.lower().endswith((".mp4",".mov")) and os.path.exists(midia):
                         c_p1, c_p2 = st.columns(2)
                         st_brand = c_p1.selectbox("Estilo:", ["standard", "minimalist_glass"], key=f"st_br_{a_id}")
                         if c_p2.button("🎨 Gerar Arte", key=f"arte2_{a_id}", use_container_width=True):
@@ -347,7 +297,7 @@ with tab_studio:
                                     conn_s.commit(); conn_s.close()
                                     st.success("Aplicado!"); st.rerun()
 
-                    if midia and midia.endswith((".mp4",".mov")) and os.path.exists(midia):
+                    if midia and midia.lower().endswith((".mp4",".mov")) and os.path.exists(midia):
                         if st.button("🛡️ Anti-Shadowban", key=f"anti_{a_id}"):
                             with st.spinner("Processando vídeo único…"):
                                 try:
@@ -363,19 +313,26 @@ with tab_studio:
 
                 # Editor por rede social
                 with col_ed:
-                    st.markdown("**📝 Texto Original:**")
-                    st.code((texto or "")[:400], language="markdown")
-                    if link:
-                        st.markdown(f"**🔗 Link:** `{link[:70]}…`" if len(link or "") > 70 else f"**🔗 Link:** `{link}`")
+                    st.markdown("### 📝 Original & Metadados")
+                    with st.container(border=True):
+                        st.caption("Texto Base:")
+                        st.markdown(f"*{ (texto or '')[:400] }*")
+                        if link:
+                            st.markdown("---")
+                            st.markdown(f"**🔗 Link Shopee:** `{link[:70]}…`" if len(link or "") > 70 else f"**🔗 Link Shopee:** `{link}`")
 
-                    if st.button("✨ Gerar Copies com IA", key=f"gerar_copy_{a_id}", type="primary"):
+                    if st.button("✨ Gerar Copies com IA", key=f"gerar_copy_{a_id}", type="primary", use_container_width=True):
                         with st.spinner("Consultando Gemini…"):
                             copies = generate_copies_por_rede(texto or nome_m if 'nome_m' in dir() else texto or "")
                             st.session_state[f"copies_{a_id}"] = copies
+                            st.session_state[f"ig_{a_id}"] = copies.get("instagram_reels","")
+                            st.session_state[f"tt_{a_id}"] = copies.get("tiktok","")
+                            st.session_state[f"sh_{a_id}"] = copies.get("shopee_video","")
+                            st.rerun()
 
                     copies_salvas = st.session_state.get(f"copies_{a_id}", {})
 
-                    st.markdown("**✍️ Editor por Rede Social:**")
+                    st.markdown("### ✍️ Estúdio Formatação")
                     t_ig, t_tt, t_sh, t_wa = st.tabs(["📸 Instagram", "🎵 TikTok", "🛒 Shopee Video", "💬 WhatsApp"])
 
                     with t_ig:
@@ -441,7 +398,7 @@ with tab_studio:
 # ══════════════════════════════════════════════
 #  ABA 2 — VITRINE & LOGS
 # ══════════════════════════════════════════════
-with tab_vitrine:
+if menu_selecionado == '🏡 Início':
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(96,165,250,0.1),rgba(96,165,250,0.04));border:1px solid rgba(96,165,250,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
       <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">📊 Gestão de Vitrine & Logs</h3>
@@ -485,7 +442,7 @@ with tab_vitrine:
 # ══════════════════════════════════════════════
 #  ABA 3 — CAMPANHAS (THEME.JSON)
 # ══════════════════════════════════════════════
-with tab_camp:
+if menu_selecionado == '⚙️ Configurações Extra':
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(167,139,250,0.1),rgba(167,139,250,0.04));border:1px solid rgba(167,139,250,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
       <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">📅 Gestão de Campanhas & Identidade</h3>
@@ -541,7 +498,7 @@ with tab_camp:
 # ══════════════════════════════════════════════
 #  ABA 4 — CUPONS
 # ══════════════════════════════════════════════
-with tab_cupons:
+if menu_selecionado == '⚙️ Configurações Extra':
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(251,191,36,0.04));border:1px solid rgba(251,191,36,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
       <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">🎟️ Gestão de Cupons Shopee</h3>
@@ -578,7 +535,7 @@ with tab_cupons:
 # ══════════════════════════════════════════════
 #  ABA 5 — BANCO DE MÍDIAS
 # ══════════════════════════════════════════════
-with tab_banco:
+if menu_selecionado == '🗂️ Banco de Mídias':
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(59,130,246,0.04));border:1px solid rgba(59,130,246,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
       <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">🗂️ Banco de Mídias 2.0</h3>
@@ -586,17 +543,36 @@ with tab_banco:
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Upload em Lote ──
-    with st.expander("⬆️ Upload em Lote", expanded=False):
-        up_files = st.file_uploader("Arraste fotos ou vídeos aqui:", type=["jpg","jpeg","png","webp","mp4","mov"], accept_multiple_files=True, key="bulk_up")
-        if up_files:
-            if st.button("🚀 Iniciar Upload de Lote", type="primary"):
+    # ── Faxina e Upload ──
+    with st.expander("🛠️ Ferramentas do Banco", expanded=False):
+        c_up, c_clean = st.columns(2)
+        with c_up:
+            st.markdown("**⬆️ Upload em Lote**")
+            up_files = st.file_uploader("Fotos ou vídeos:", type=["jpg","jpeg","png","webp","mp4","mov"], accept_multiple_files=True, key="bulk_up")
+            if up_files and st.button("🚀 Iniciar Upload", type="primary"):
                 media_path = os.path.join(proj_root, "media")
                 for f in up_files:
-                    with open(os.path.join(media_path, f.name), "wb") as out:
-                        out.write(f.read())
-                st.success(f"✅ {len(up_files)} arquivos salvos com sucesso!")
-                st.rerun()
+                    with open(os.path.join(media_path, f.name), "wb") as out: out.write(f.read())
+                st.success(f"✅ {len(up_files)} salvos!"); st.rerun()
+        
+        with c_clean:
+            st.markdown("**🗑️ Faxina Severa**")
+            st.warning("Apaga DEFINITIVAMENTE todos os arquivos nas pastas /media e /downloads.")
+            confirm = st.checkbox("Confirmo que desejo apagar TUDO.")
+            if st.button("🚨 EXECUTAR DELETE SEVERO", type="primary", disabled=not confirm):
+                import shutil
+                m_dir = os.path.join(proj_root, "media")
+                d_dir = os.path.join(proj_root, "downloads")
+                count = 0
+                for folder in [m_dir, d_dir]:
+                    for f in os.listdir(folder):
+                        fp = os.path.join(folder, f)
+                        try:
+                            if os.path.isfile(fp): os.unlink(fp); count += 1
+                            elif os.path.isdir(fp): shutil.rmtree(fp); count += 1
+                        except: pass
+                st.success(f"🔥 {count} arquivos eliminados com sucesso!"); st.rerun()
+
 
     media_dir = os.path.join(proj_root, "media")
     down_dir = os.path.join(proj_root, "downloads")
@@ -621,10 +597,18 @@ with tab_banco:
             with cols_m[idx]:
                 with st.container(border=True):
                     if arq.lower().endswith('.mp4'):
-                        st.video(path_arq)
+                        try:
+                            st.video(path_arq)
+                        except Exception:
+                            st.error("Erro")
                     else:
-                        st.image(path_arq, use_container_width=True)
+                        try:
+                            st.image(path_arq, use_container_width=True)
+                        except Exception:
+                            st.error("Mídia corrompida")
                     st.caption(f"📄 {arq[:20]}")
+                    
+                    link_shopee = st.text_input("🔗 Link (Shopee):", placeholder="Opcional", key=f"link_m_{i}")
                     
                     # Botões de ação
                     c_b1, c_b2 = st.columns(2)
@@ -639,15 +623,18 @@ with tab_banco:
                     
                     if c_b2.button("📦 Usar", key=f"use_{i}", type="primary", use_container_width=True):
                         conn_u = get_connection(); cu = conn_u.cursor()
-                        cu.execute("INSERT INTO achados (texto_original, midia_path, status, status_fluxo) VALUES (?, ?, 'PENDING', 'Ideia')",
-                                   (f"Novo Achado: {arq}", path_arq))
+                        # Determina se envia ou não o link
+                        # Definimos status default
+                        status = 'PENDING' if link_shopee else 'MISSING_LINK'
+                        cu.execute("INSERT INTO achados (texto_original, midia_path, link_original, status, status_fluxo) VALUES (?, ?, ?, ?, 'Ideia')",
+                                   (f"Nova Mídia Adicionada: {arq}", path_arq, link_shopee, status))
                         conn_u.commit(); conn_u.close()
                         st.success("No Estúdio!"); st.rerun()
 
 # ══════════════════════════════════════════════
 #  ABA 6 — ENGAJAMENTO (AUTO-DM)
 # ══════════════════════════════════════════════
-with tab_eng:
+if menu_selecionado == '💬 Automações & Engajamento':
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.04));border:1px solid rgba(16,185,129,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
       <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">💬 Monitor de Engajamento & Auto-DM</h3>
@@ -734,7 +721,7 @@ with tab_eng:
 # ══════════════════════════════════════════════
 #  ABA 7 — VITRINE ONLINE (STATUS)
 # ══════════════════════════════════════════════
-with tab_online:
+if menu_selecionado == '⚙️ Configurações Extra':
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(255,107,53,0.1),rgba(255,107,53,0.04));border:1px solid rgba(255,107,53,0.2);border-radius:16px;padding:20px 24px;margin-bottom:20px;">
       <h3 style="margin:0;color:#E8EAF0;font-size:1.2rem;font-weight:800;">🌐 Status da Vitrine Online</h3>

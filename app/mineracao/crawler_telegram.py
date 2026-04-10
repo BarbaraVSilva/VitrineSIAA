@@ -54,7 +54,7 @@ def parse_shopee_links(raw_text: str) -> list[dict]:
     if not raw_text:
         return []
         
-    padrao_urls = re.compile(r'(https?://(?:s\.shopee\.com\.br|shope\.ee|shopee\.com\.br)[^\s]+)')
+    padrao_urls = re.compile(r'(https?://(?:s\.shopee\.com\.br|shope\.ee|shopee\.com\.br|br\.shp\.ee)[^\s]+)')
     encontrados = padrao_urls.findall(raw_text)
     
     resultados = []
@@ -92,7 +92,7 @@ async def process_telegram_message(message):
     # 2. Baixar as Mídias
     media_path = await download_media(message)
     
-    if shopee_links or media_path:        
+    if shopee_links_objs or media_path:        
         # Extrai foto do vídeo (se for mp4 ou similar)
         import sys
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
