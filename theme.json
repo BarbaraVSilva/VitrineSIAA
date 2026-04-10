@@ -1,5 +1,6 @@
 {
-  "logotipo": "Barbara VIP Deals",
+  "logotipo": "Radar VIP Achadinhos",
+  "logo_img": "media/logo.png",
   "cores": {
     "primaria": "#ff5722",
     "secundaria": "#212121",
@@ -18,7 +19,7 @@
       "url": "https://mycollection.shop/SEULINKAQUI"
     },
     {
-      "nome": "📱 Últimos Achadinhos de Tecnologia",
+      "nome": "🛍️ Últimos Achadinhos",
       "url": "https://mycollection.shop/SEULINKAQUI"
     },
     {

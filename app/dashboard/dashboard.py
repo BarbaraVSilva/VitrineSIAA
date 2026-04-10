@@ -177,6 +177,18 @@ with tab_studio:
                     st.success(f"Grupo {tema} aprovado!")
                     st.rerun()
 
+    # ── Limpeza da Fila PENDENTE ──
+    with st.expander("🗑️ Limpar Fila PENDENTE", expanded=False):
+        st.write("Descartar **TODOS** os vídeos/produtos que estão aguardando triagem. Útil para limpar lixo mineral.")
+        if st.button("🚨 Ocultar Todos os Pendentes", type="primary"):
+            conn_cl = get_connection()
+            c_cl = conn_cl.cursor()
+            c_cl.execute("UPDATE achados SET status='REJECTED', status_fluxo='Postado' WHERE status='PENDING'")
+            conn_cl.commit()
+            conn_cl.close()
+            st.success("Fila limpa! Todos os pendentes foram descartados.")
+            st.rerun()
+
     # ── Seção de Captura ──
     st.markdown("#### 📥 Capturar Conteúdo")
     cap_col1, cap_col2 = st.columns([1, 2])

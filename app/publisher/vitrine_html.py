@@ -20,8 +20,12 @@ def build_vitrine_page_html(
 ) -> str:
     """Monta o documento HTML completo da página index da vitrine."""
     logo = html.escape(str(theme.get("logotipo", "Vitrine VIP")))
+    logo_img = theme.get("logo_img", "")
     titulo_e = html.escape(str(titulo))
     subtitulo_e = html.escape(str(subtitulo))
+    
+    avatar_html = f'<img src="{html.escape(logo_img)}" class="hero-avatar-img" alt="Logo">' if logo_img else '<div class="hero-avatar">🔥</div>'
+    
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -65,6 +69,13 @@ def build_vitrine_page_html(
       background: linear-gradient(135deg, #FF6B35, #FF4500);
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 2.5rem;
+      margin-bottom: 16px;
+      box-shadow: 0 0 40px rgba(255,107,53,0.5);
+    }}
+    .hero-avatar-img {{
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
       margin-bottom: 16px;
       box-shadow: 0 0 40px rgba(255,107,53,0.5);
     }}
@@ -208,7 +219,7 @@ def build_vitrine_page_html(
     .cat-card-name {{
       font-size: 0.8rem; font-weight: 600;
       overflow: hidden; display: -webkit-box;
-      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
       line-height: 1.3; margin-bottom: 8px;
     }}
     .cat-card-cta {{
@@ -242,7 +253,7 @@ def build_vitrine_page_html(
 
   <!-- HERO -->
   <div class="hero {banner_class}">
-    <div class="hero-avatar">🔥</div>
+    {avatar_html}
     <h1 class="hero-title">{titulo_e}</h1>
     <p class="hero-sub">{subtitulo_e}</p>
     <span class="hero-badge">⚡ Atualizado automaticamente · {agora.strftime('%d/%m/%Y %H:%M')}</span>
