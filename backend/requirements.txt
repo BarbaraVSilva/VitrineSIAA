@@ -1,0 +1,21 @@
+# Requisitos SIAA-2026 (Atualizado)
+Telethon
+moviepy
+edge-tts
+python-dotenv
+streamlit
+requests
+pillow
+bs4
+sqlalchemy
+pytest
+schedule
+fastapi
+uvicorn
+google-generativeai
+pydantic
+playwright
+openai
+yt-dlp
+aiohttp
+firebase-admin

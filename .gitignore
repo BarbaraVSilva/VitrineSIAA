@@ -9,5 +9,13 @@ __pycache__/
 .venv/
 venv/
 logs/*.log
+logs/*.json
 .idea/
 .vscode/
+node_modules/
+*.session
+*.session-journal
+firebase-applet-config.json
+serviceAccountKey.json
+downloads/
+media/

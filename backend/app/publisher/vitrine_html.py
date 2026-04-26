@@ -1,32 +1,60 @@
-<!DOCTYPE html>
+"""Geração do HTML da vitrine (GitHub Pages) — separado da orquestração e do Git."""
+
+from __future__ import annotations
+
+import datetime
+import html
+from typing import Any
+
+
+def build_vitrine_page_html(
+    theme: dict[str, Any],
+    agora: datetime.datetime,
+    recentes: list[dict[str, Any]],
+    colecoes_html: str,
+    cards_html: str,
+    cats_html: str,
+    titulo: str,
+    subtitulo: str,
+    banner_class: str,
+) -> str:
+    """Monta o documento HTML completo da página index da vitrine."""
+    logo = html.escape(str(theme.get("logotipo", "Vitrine VIP")))
+    logo_img = theme.get("logo_img", "")
+    titulo_e = html.escape(str(titulo))
+    subtitulo_e = html.escape(str(subtitulo))
+    
+    avatar_html = f'<img src="{html.escape(logo_img)}" class="hero-avatar-img" alt="Logo">' if logo_img else '<div class="hero-avatar">🔥</div>'
+    
+    return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Radar VIP Achadinhos · Melhores Ofertas Shopee</title>
+  <title>{logo} · Melhores Ofertas Shopee</title>
   <meta name="description" content="Achadinhos selecionados com os melhores descontos da Shopee. Links de afiliado curados automaticamente.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
 
-    body {
+    body {{
       font-family: 'Inter', sans-serif;
       background: #0D0F14;
       color: #E8EAF0;
       min-height: 100vh;
       padding-bottom: 48px;
-    }
+    }}
 
     /* ── HERO ── */
-    .hero {
+    .hero {{
       background: linear-gradient(160deg, #1a0a00 0%, #130a1a 40%, #0D0F14 100%);
       padding: 48px 20px 36px;
       text-align: center;
       position: relative;
       overflow: hidden;
-    }
-    .hero::before {
+    }}
+    .hero::before {{
       content: '';
       position: absolute;
       top: -80px; left: 50%;
@@ -34,8 +62,8 @@
       width: 400px; height: 400px;
       background: radial-gradient(circle, rgba(255,107,53,0.18) 0%, transparent 70%);
       pointer-events: none;
-    }
-    .hero-avatar {
+    }}
+    .hero-avatar {{
       width: 90px; height: 90px;
       border-radius: 50%;
       background: linear-gradient(135deg, #FF6B35, #FF4500);
@@ -43,26 +71,26 @@
       font-size: 2.5rem;
       margin-bottom: 16px;
       box-shadow: 0 0 40px rgba(255,107,53,0.5);
-    }
-    .hero-avatar-img {
+    }}
+    .hero-avatar-img {{
       width: 90px; height: 90px;
       border-radius: 50%;
       object-fit: cover;
       margin-bottom: 16px;
       box-shadow: 0 0 40px rgba(255,107,53,0.5);
-    }
-    .hero-title {
+    }}
+    .hero-title {{
       font-size: 1.6rem; font-weight: 800;
       color: #fff;
       letter-spacing: -0.02em;
       line-height: 1.2;
-    }
-    .hero-title span { color: #FF6B35; }
-    .hero-sub {
+    }}
+    .hero-title span {{ color: #FF6B35; }}
+    .hero-sub {{
       color: #8B90A0; font-size: 0.9rem;
       margin-top: 8px; line-height: 1.5;
-    }
-    .hero-badge {
+    }}
+    .hero-badge {{
       display: inline-block;
       background: rgba(255,107,53,0.15);
       border: 1px solid rgba(255,107,53,0.3);
@@ -70,42 +98,42 @@
       font-size: 0.75rem; font-weight: 600;
       padding: 4px 12px; border-radius: 20px;
       margin-top: 12px;
-    }
-    .is-campanha .hero-badge {
+    }}
+    .is-campanha .hero-badge {{
       background: linear-gradient(135deg, #FF6B35, #FF4500);
       color: white;
       animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,53,0.4); }
-      50% { box-shadow: 0 0 0 8px rgba(255,107,53,0); }
-    }
+    }}
+    @keyframes pulse {{
+      0%, 100% {{ box-shadow: 0 0 0 0 rgba(255,107,53,0.4); }}
+      50% {{ box-shadow: 0 0 0 8px rgba(255,107,53,0); }}
+    }}
 
     /* ── CONTAINER ── */
-    .container {
+    .container {{
       max-width: 480px;
       margin: 0 auto;
       padding: 0 16px;
-    }
+    }}
 
     /* ── SEÇÃO ── */
-    .section { margin-top: 32px; }
-    .section-title {
+    .section {{ margin-top: 32px; }}
+    .section-title {{
       font-size: 0.72rem; font-weight: 700;
       color: #8B90A0;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       margin-bottom: 12px;
       display: flex; align-items: center; gap: 8px;
-    }
-    .section-title::after {
+    }}
+    .section-title::after {{
       content: '';
       flex: 1; height: 1px;
       background: rgba(255,255,255,0.07);
-    }
+    }}
 
     /* ── LINK BUTTONS (Coleções) ── */
-    .link-btn {
+    .link-btn {{
       display: flex; align-items: center; gap: 12px;
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.09);
@@ -116,19 +144,19 @@
       color: #E8EAF0;
       font-weight: 600; font-size: 0.95rem;
       transition: all 0.2s ease;
-    }
-    .link-btn:hover {
+    }}
+    .link-btn:hover {{
       background: rgba(255,107,53,0.12);
       border-color: rgba(255,107,53,0.4);
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba(255,107,53,0.2);
-    }
-    .link-icon { font-size: 1.3rem; }
-    .link-text { flex: 1; }
-    .link-arrow { color: #FF6B35; font-size: 1.1rem; }
+    }}
+    .link-icon {{ font-size: 1.3rem; }}
+    .link-text {{ flex: 1; }}
+    .link-arrow {{ color: #FF6B35; font-size: 1.1rem; }}
 
     /* ── PRODUCT CARDS (recentes) ── */
-    .product-card {
+    .product-card {{
       display: flex; align-items: center;
       justify-content: space-between;
       background: rgba(255,255,255,0.04);
@@ -139,43 +167,43 @@
       text-decoration: none;
       color: #E8EAF0;
       transition: all 0.2s ease;
-    }
-    .product-card:hover {
+    }}
+    .product-card:hover {{
       border-color: rgba(255,107,53,0.35);
       background: rgba(255,107,53,0.06);
-    }
-    .card-content { flex: 1; min-width: 0; }
-    .card-name {
+    }}
+    .card-content {{ flex: 1; min-width: 0; }}
+    .card-name {{
       font-size: 0.88rem; font-weight: 600;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .badge {
+    }}
+    .badge {{
       display: inline-block;
       background: rgba(34,197,94,0.15);
       color: #22C55E;
       font-size: 0.68rem; font-weight: 700;
       padding: 2px 8px; border-radius: 6px;
       margin-top: 4px;
-    }
-    .card-cta {
+    }}
+    .card-cta {{
       color: #FF6B35; font-size: 0.82rem; font-weight: 700;
       white-space: nowrap; margin-left: 12px;
-    }
+    }}
 
     /* ── CATEGORIA ── */
-    .category-section { margin-top: 28px; }
-    .cat-title {
+    .category-section {{ margin-top: 28px; }}
+    .cat-title {{
       color: #E8EAF0; font-size: 0.9rem; font-weight: 700;
       margin-bottom: 10px;
       padding-bottom: 8px;
       border-bottom: 1px solid rgba(255,107,53,0.2);
-    }
-    .cat-grid {
+    }}
+    .cat-grid {{
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-    }
-    .cat-card {
+    }}
+    .cat-card {{
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 10px;
@@ -183,87 +211,82 @@
       text-decoration: none;
       color: #E8EAF0;
       transition: all 0.2s;
-    }
-    .cat-card:hover {
+    }}
+    .cat-card:hover {{
       border-color: rgba(255,107,53,0.35);
       background: rgba(255,107,53,0.07);
-    }
-    .cat-card-name {
+    }}
+    .cat-card-name {{
       font-size: 0.8rem; font-weight: 600;
       overflow: hidden; display: -webkit-box;
       -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
       line-height: 1.3; margin-bottom: 8px;
-    }
-    .cat-card-cta {
+    }}
+    .cat-card-cta {{
       color: #FF6B35; font-size: 0.75rem; font-weight: 700;
-    }
+    }}
 
-    .card-img {
+    .card-img {{
       width: 60px; height: 60px; border-radius: 10px;
       background-size: cover; background-position: center;
       margin-right: 12px; flex-shrink: 0;
       border: 1px solid rgba(255,255,255,0.05);
-    }
-    .no-img { display: flex; align-items: center; justify-content: center; background: rgba(255,107,53,0.05); font-size: 1.2rem; }
+    }}
+    .no-img {{ display: flex; align-items: center; justify-content: center; background: rgba(255,107,53,0.05); font-size: 1.2rem; }}
     
-    .cat-img {
+    .cat-img {{
       width: 100%; height: 90px; border-radius: 8px;
       background-size: cover; background-position: center;
       margin-bottom: 8px;
       border: 1px solid rgba(255,255,255,0.05);
-    }
+    }}
 
     /* ── FOOTER ── */
-    .footer {
+    .footer {{
       text-align: center; margin-top: 48px;
       color: #3D4050; font-size: 0.72rem;
-    }
-    .footer a { color: #FF6B35; text-decoration: none; }
+    }}
+    .footer a {{ color: #FF6B35; text-decoration: none; }}
   </style>
 </head>
 <body>
 
   <!-- HERO -->
-  <div class="hero ">
-    <img src="media/logo.png" class="hero-avatar-img" alt="Logo">
-    <h1 class="hero-title">✨ Radar VIP Achadinhos</h1>
-    <p class="hero-sub">As melhores ofertas, separadas a dedo 🛒</p>
-    <span class="hero-badge">⚡ Atualizado automaticamente · 26/04/2026 01:07</span>
+  <div class="hero {banner_class}">
+    {avatar_html}
+    <h1 class="hero-title">{titulo_e}</h1>
+    <p class="hero-sub">{subtitulo_e}</p>
+    <span class="hero-badge">⚡ Atualizado automaticamente · {agora.strftime('%d/%m/%Y %H:%M')}</span>
   </div>
 
   <!-- CONTEÚDO -->
   <div class="container">
 
     <!-- Coleções -->
-    
+    {"" if not colecoes_html else f'''
     <div class="section">
       <p class="section-title">Minhas Coleções</p>
-      
-        <a href="https://mycollection.shop/SEULINKAQUI" target="_blank" rel="noopener noreferrer" class="link-btn">
-            <span class="link-icon">🛍️</span>
-            <span class="link-text">🛍️ Minha Coleção Completa na Shopee</span>
-            <span class="link-arrow">→</span>
-        </a>
-        <a href="https://mycollection.shop/SEULINKAQUI" target="_blank" rel="noopener noreferrer" class="link-btn">
-            <span class="link-icon">🛍️</span>
-            <span class="link-text">🛍️ Últimos Achadinhos</span>
-            <span class="link-arrow">→</span>
-        </a>
-        <a href="https://mycollection.shop/SEULINKAQUI" target="_blank" rel="noopener noreferrer" class="link-btn">
-            <span class="link-icon">🛍️</span>
-            <span class="link-text">💄 Beleza e Cuidados Pessoais</span>
-            <span class="link-arrow">→</span>
-        </a>
+      {colecoes_html}
     </div>
-    
+    '''}
 
     <!-- Produtos Recentes -->
-    
+    {"" if not cards_html else f'''
+    <div class="section">
+      <p class="section-title">Achados Recentes</p>
+      {cards_html}
+    </div>
+    '''}
 
     <!-- Por Categoria -->
-    
+    {"" if not cats_html else f'''
+    <div class="section">
+      <p class="section-title">Por Categoria</p>
+      {cats_html}
+    </div>
+    '''}
 
-    <div style='text-align:center;padding:60px 20px;color:#3D4050;'>Nenhum produto aprovado ainda. O robô está caçando as melhores ofertas! 🤖</div>
+    {"<div style='text-align:center;padding:60px 20px;color:#3D4050;'>Nenhum produto aprovado ainda. O robô está caçando as melhores ofertas! 🤖</div>" if not recentes else ""}
 
     <div class="footer">
       <p>Gerado por <a href="https://github.com/BarbaraVSilva/VitrineSIAA">SIAA-2026</a> · Sistema Inteligente de Automação de Afiliados</p>
@@ -271,4 +294,4 @@
   </div>
 
 </body>
-</html>
+</html>"""

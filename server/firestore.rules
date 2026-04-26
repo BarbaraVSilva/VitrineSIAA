@@ -1,0 +1,174 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: mining
+// Document ID: item_id
+// Fields:
+//   - id: string (required)
+//   - title: string (required)
+//   - price: string (required)
+//   - image: string (required)
+//   - source: string (required)
+//   - rawLink: string (optional)
+//   - status: string (required, enum: pending, rejected, approved)
+//   - timestamp: string (required, format: ISO 8601)
+//
+// Collection: vitrine
+// Document ID: item_id
+// Fields:
+//   - id: string (required)
+//   - title: string (required)
+//   - price: string (required)
+//   - image: string (required)
+//   - hook: string (required)
+//   - affiliateLink: string (required)
+//   - approvedAt: string (required, format: ISO 8601)
+//
+// Collection: processing
+// Document ID: task_id
+// Fields:
+//   - id: string (required)
+//   - itemId: string (required)
+//   - title: string (required)
+//   - image: string (required)
+//   - step: string (required)
+//   - progress: number (required, 0-100)
+//   - status: string (required, enum: queued, processing, completed, failed)
+//   - createdAt: string (required, format: ISO 8601)
+//
+// Collection: schedule
+// Document ID: post_id
+// Fields:
+//   - id: string (required)
+//   - itemId: string (required)
+//   - title: string (required)
+//   - platform: string (required)
+//   - time: string (required)
+//   - status: string (required, enum: scheduled, posted, failed)
+//
+// Collection: analytics
+// Document ID: global
+// Fields:
+//   - clicks: number (required)
+//   - conversions: number (required)
+//   - revenue: number (required)
+//   - topCategories: list (optional)
+//   - dailyStats: list (optional)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "barbara.vitoria2869@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidMiningItem(data) {
+      return data.keys().hasAll(['id', 'title', 'price', 'image', 'source', 'status', 'timestamp']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.price is string && data.price.size() > 0 && data.price.size() < 50 &&
+             data.image is string && data.image.size() > 0 && data.image.size() < 1000 &&
+             data.source is string && data.source.size() > 0 && data.source.size() < 100 &&
+             data.status in ['pending', 'rejected', 'approved'] &&
+             data.timestamp is string;
+    }
+
+    function isValidApprovedItem(data) {
+      return data.keys().hasAll(['id', 'title', 'price', 'image', 'hook', 'affiliateLink', 'approvedAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.price is string && data.price.size() > 0 && data.price.size() < 50 &&
+             data.image is string && data.image.size() > 0 && data.image.size() < 1000 &&
+             data.hook is string && data.hook.size() > 0 && data.hook.size() < 1000 &&
+             data.affiliateLink is string && data.affiliateLink.size() > 0 && data.affiliateLink.size() < 1000 &&
+             data.approvedAt is string;
+    }
+
+    function isValidProcessingTask(data) {
+      return data.keys().hasAll(['id', 'itemId', 'title', 'image', 'step', 'progress', 'status', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.itemId is string && data.itemId.size() > 0 && data.itemId.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.image is string && data.image.size() > 0 && data.image.size() < 1000 &&
+             data.step is string && data.step.size() > 0 && data.step.size() < 100 &&
+             data.progress is number && data.progress >= 0 && data.progress <= 100 &&
+             data.status in ['queued', 'processing', 'completed', 'failed'] &&
+             data.createdAt is string;
+    }
+
+    function isValidScheduledPost(data) {
+      return data.keys().hasAll(['id', 'itemId', 'title', 'platform', 'time', 'status']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.itemId is string && data.itemId.size() > 0 && data.itemId.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.platform is string && data.platform.size() > 0 && data.platform.size() < 100 &&
+             data.time is string && data.time.size() > 0 && data.time.size() < 100 &&
+             data.status in ['scheduled', 'posted', 'failed'];
+    }
+
+    function isValidAnalytics(data) {
+      return data.keys().hasAll(['clicks', 'conversions', 'revenue']) &&
+             data.clicks is number && data.clicks >= 0 &&
+             data.conversions is number && data.conversions >= 0 &&
+             data.revenue is number && data.revenue >= 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /mining/{itemId} {
+      allow read, write: if isAdmin() && (request.method == 'GET' || isValidMiningItem(request.resource.data));
+    }
+
+    match /vitrine/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && (request.method == 'GET' || isValidApprovedItem(request.resource.data));
+    }
+
+    match /processing/{taskId} {
+      allow read, write: if isAdmin() && (request.method == 'GET' || isValidProcessingTask(request.resource.data));
+    }
+
+    match /schedule/{postId} {
+      allow read, write: if isAdmin() && (request.method == 'GET' || isValidScheduledPost(request.resource.data));
+    }
+
+    match /analytics/{docId} {
+      allow read, write: if isAdmin() && (docId == 'global' && (request.method == 'GET' || isValidAnalytics(request.resource.data)));
+    }
+
+    match /bots/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

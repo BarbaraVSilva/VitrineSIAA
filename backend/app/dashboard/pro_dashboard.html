@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0A0B0F">
+  <title>SIAA 2026 — MASTER Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════════
+       PREMIUM DESIGN SYSTEM — SIAA 2026
+    ═══════════════════════════════════════ */
+    :root {
+      --bg:       #0A0B0F;
+      --surface:  #12141C;
+      --card:     #181B26;
+      --border:   rgba(255, 255, 255, 0.08);
+      --border2:  rgba(255, 255, 255, 0.12);
+      --accent:   #FF5C28;
+      --accent-glow: rgba(255, 92, 40, 0.3);
+      --gold:     #F5C842;
+      --green:    #22D587;
+      --blue:     #4FC3F7;
+      --purple:   #B794F4;
+      --text:     #F0F2F8;
+      --muted:    #8B90A6;
+      --dim:      #3D4259;
+      --ff-head:  'Syne', sans-serif;
+      --ff-mono:  'DM Mono', monospace;
+      --r:        20px;
+      --r-sm:     12px;
+      --sidebar-w: 260px;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ff-head);
+      font-size: 15px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #app { display: flex; min-height: 100vh; width: 100%; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: rgba(18, 20, 28, 0.95);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: sticky; top: 0; height: 100vh; z-index: 100;
+      backdrop-filter: blur(20px); padding: 30px 20px;
+    }
+    .sidebar-brand { font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; color: var(--text); }
+    .sidebar-brand span { color: var(--accent); }
+
+    .nav-group { margin-bottom: 30px; }
+    .nav-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; padding-left: 12px; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px;
+      border-radius: var(--r-sm); color: var(--muted); text-decoration: none;
+      font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; margin-bottom: 4px;
+    }
+    .nav-item:hover { background: rgba(255, 92, 40, 0.08); color: var(--text); }
+    .nav-item.active { background: var(--accent); color: white; box-shadow: 0 4px 15px var(--accent-glow); }
+
+    .main-content { flex: 1; padding: 40px; max-width: 1400px; margin: 0 auto; }
+
+    .screen { display: none; animation: fadeIn 0.4s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 24px; margin-bottom: 24px; }
+    .card-title { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .card-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 24px; border: none; border-radius: var(--r-sm); font-family: var(--ff-head); font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-block { width: 100%; }
+    .btn-primary { background: linear-gradient(135deg, #FF6B44, #E84800); color: white; }
+    .btn-secondary { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: var(--text); }
+
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+    .field input, .field select, .field textarea { width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border2); border-radius: var(--r-sm); color: var(--text); padding: 14px; outline: none; }
+
+    /* ── KANBAN ── */
+    .kanban-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .kanban-col { background: rgba(18, 20, 28, 0.4); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; min-height: 500px; }
+    .col-header { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--dim); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .col-count { background: var(--border2); padding: 2px 8px; border-radius: 20px; color: var(--muted); }
+    .kanban-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; margin-bottom: 12px; }
+
+    /* ── MOBILE NAV ── */
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(18, 20, 28, 0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border); z-index: 1000; }
+    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 12px 6px; color: var(--muted); font-size: 0.65rem; font-weight: 700; }
+    .nav-btn.active { color: var(--accent); }
+
+    #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--accent); color: white; padding: 12px 24px; border-radius: 30px; font-weight: 700; opacity: 0; transition: all 0.3s; z-index: 2000; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 1024px) { .sidebar { display: none; } .main-content { padding: 20px; padding-bottom: 100px; } .bottom-nav { display: flex; } }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">SIAA <span>MASTER</span></div>
+    <div class="nav-group">
+      <div class="nav-label">Geral</div>
+      <div class="nav-item active" onclick="goNav('home')">🏠 Início</div>
+      <div class="nav-item" onclick="goNav('studio')">🎬 Estúdio Kanban</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Extração</div>
+      <div class="nav-item" onclick="goNav('download')">📥 Downloader Viral</div>
+      <div class="nav-item" onclick="goNav('mining')">🛒 Mineração Shopee</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">IA & Copy</div>
+      <div class="nav-item" onclick="goNav('copy')">✍️ Gerador de Copy</div>
+      <div class="nav-item" onclick="goNav('chat')">🤖 Chat Mentoria</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Automação</div>
+      <div class="nav-item" onclick="goNav('whatsapp')">💬 WhatsApp Pro</div>
+      <div class="nav-item" onclick="goNav('config')">⚙️ Ajustes</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div id="toast">✅ Concluído!</div>
+
+    <!-- HOME -->
+    <section class="screen active" id="screen-home">
+      <div class="card" style="background: linear-gradient(135deg, rgba(255, 92, 40, 0.15) 0%, transparent 60%);">
+        <h1>Bem-vinda ao SIAA MASTER 🚀</h1>
+        <p style="color: var(--muted); margin-top: 10px;">O ecossistema completo para afiliados profissionais.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div class="card" id="card-access">
+          <div class="card-title"><span class="dot" style="background:var(--blue); box-shadow:0 0 10px var(--blue)"></span>📱 Acesso Mobile (Sem Ngrok)</div>
+          <div id="access-info-render" style="font-size:0.85rem; line-height:1.6;">
+            <p>Carregando endereço de rede...</p>
+          </div>
+          <p style="font-size:0.7rem; color:var(--dim); margin-top:10px;">💡 Use o <b>Tailscale</b> para acessar de qualquer lugar do mundo com a mesma velocidade.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Ações Rápidas</div>
+          <button class="btn btn-primary btn-block" onclick="goNav('download')">📥 Baixar Vídeo Viral</button>
+          <button class="btn btn-secondary btn-block" style="margin-top: 12px;" onclick="goNav('copy')">✍️ Criar Copy Estratégica</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="dot" style="background:var(--green); box-shadow:0 0 10px var(--green)"></span>Status dos Robôs</div>
+          <p style="font-size: 0.9rem; margin-bottom: 8px;">🤖 <b>Telegram:</b> <span style="color:var(--green)">MONITORANDO</span></p>
+          <p style="font-size: 0.9rem; margin-bottom: 8px;">💬 <b>WhatsApp:</b> <span id="st-wa" style="color:var(--gold)">CONECTANDO...</span></p>
+          <p style="font-size: 0.9rem;">📡 <b>Servidor:</b> <span style="color:var(--green)">REDE LOCAL ATIVA</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOWNLOADER -->
+    <section class="screen" id="screen-download">
+      <div class="card">
+        <h2>📥 Downloader Viral Pro</h2>
+        <p style="color:var(--muted); margin-bottom:20px;">Cole o link do Instagram, TikTok ou Shopee para baixar sem marca d'água.</p>
+        <div class="field">
+          <label>URL da Mídia</label>
+          <input type="text" id="dl-url" placeholder="https://www.instagram.com/reels/...">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="execDownload()">📥 Iniciar Captura</button>
+        <div id="dl-result" style="margin-top:20px; display:none;">
+            <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:var(--r-sm); border:1px dashed var(--border);">
+                ✅ Vídeo processado! Clique para <a href="#" style="color:var(--accent)">Download Direto</a> ou visualize no Kanban.
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COPYWRITER -->
+    <section class="screen" id="screen-copy">
+      <div class="card">
+        <h2>✍️ Gerador de Copy Estratégica</h2>
+        <div class="field">
+          <label>Estratégia</label>
+          <select id="copy-style">
+            <option value="Escassez">⚠️ ESCASSEZ (Últimas Unidades)</option>
+            <option value="Flash Sale">⚡ FLASH SALE (Preço de Custo)</option>
+            <option value="Lancamento">✨ LANÇAMENTO (Novidade Exclusiva)</option>
+            <option value="Padrao">🎨 PADRÃO (Desejo e Estética)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Descrição do Produto</label>
+          <textarea id="copy-desc" rows="4" placeholder="Descreva as características principais..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="execCopy()">🪄 Gerar Copy Viral</button>
+        <div id="copy-output" style="margin-top:20px; display:none;">
+             <!-- Result Area -->
+        </div>
+      </div>
+    </section>
+
+    <!-- WHATSAPP CONFIG -->
+    <section class="screen" id="screen-whatsapp">
+      <div class="card">
+        <h2>💬 WhatsApp Pro (Evolution API)</h2>
+        <p style="color:var(--muted); margin-bottom:20px;">Configure sua instância para automação profissional.</p>
+        <div class="field"><label>Evolution API URL</label><input type="text" id="ev-url" placeholder="http://sua-ip:8080"></div>
+        <div class="field"><label>API Token Global</label><input type="password" id="ev-token"></div>
+        <div class="field"><label>Nome da Instância</label><input type="text" id="ev-instance" value="SIAA_BOT"></div>
+        <button class="btn btn-primary btn-block" onclick="saveEvConfig()">🔌 Conectar Instância</button>
+      </div>
+    </section>
+
+    <!-- KANBAN -->
+    <section class="screen" id="screen-studio">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <h2>Estúdio SIAA</h2>
+            <button class="btn btn-secondary" onclick="loadFromAPI()">🔄 Atualizar</button>
+        </div>
+        <div class="kanban-board">
+            <div class="kanban-col" id="col-ideia"><div class="col-header">🚀 IDEIA <span class="col-count" id="cnt-ideia">0</span></div></div>
+            <div class="kanban-col" id="col-editando"><div class="col-header">✍️ EDITANDO <span class="col-count" id="cnt-editando">0</span></div></div>
+            <div class="kanban-col" id="col-pronto"><div class="col-header">✅ PRONTOS <span class="col-count" id="cnt-pronto">0</span></div></div>
+            <div class="kanban-col" id="col-postado"><div class="col-header">✈️ POSTADOS <span class="col-count" id="cnt-postado">0</span></div></div>
+        </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="screen" id="screen-config">
+        <div class="card">
+            <h2>⚙️ Configurações Gerais</h2>
+            <p style="color:var(--muted); font-size:0.8rem; margin-bottom:16px;">A <b>chave API interna</b> deve ser igual a <code>SIAA_INTERNAL_API_KEY</code> no ficheiro <code>.env</code> do servidor. Fica guardada só neste browser.</p>
+            <div class="field"><label>Chave API interna (SIAA)</label><input type="password" id="cfg-siaa-api-key" placeholder="Obrigatória para /api na rede local"></div>
+            <div class="field"><label>Gemini API Key</label><input type="password" id="cfg-gemini"></div>
+            <div class="field"><label>Shopee Affiliate ID</label><input type="text" id="cfg-shopee"></div>
+            <button class="btn btn-primary" onclick="saveGlobalConfig()">💾 Salvar Tudo</button>
+        </div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <div class="nav-btn active" onclick="goNav('home', this)">🏠</div>
+    <div class="nav-btn" onclick="goNav('download', this)">📥</div>
+    <div class="nav-btn" onclick="goNav('studio', this)">🎬</div>
+    <div class="nav-btn" onclick="goNav('copy', this)">✍️</div>
+    <div class="nav-btn" onclick="goNav('config', this)">⚙️</div>
+  </nav>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE & REAL API INTEGRATION
+// ═══════════════════════════════════════════
+let state = {
+  achados: [],
+  metrics: { total: 0, sales: "0k", ready: 0, conv: "0%" }
+};
+
+/** Envia X-SIAA-API-Key a partir do localStorage (definido em Ajustes). */
+async function siaaFetch(url, options = {}) {
+  const o = options || {};
+  const headers = new Headers(o.headers || {});
+  const k = localStorage.getItem('SIAA_INTERNAL_API_KEY') || '';
+  if (k) headers.set('X-SIAA-API-Key', k);
+  if (!headers.has('Content-Type') && o.body && typeof o.body === 'string')
+    headers.set('Content-Type', 'application/json');
+  return fetch(url, { ...o, headers });
+}
+
+function loadLocalConfig() {
+  const siaa = localStorage.getItem('SIAA_INTERNAL_API_KEY');
+  if (siaa) {
+    const el = document.getElementById('cfg-siaa-api-key');
+    if (el) el.value = siaa;
+  }
+  const gem = localStorage.getItem('cfg_gemini');
+  if (gem) {
+    const g = document.getElementById('cfg-gemini');
+    if (g) g.value = gem;
+  }
+  const sh = localStorage.getItem('cfg_shopee');
+  if (sh) {
+    const s = document.getElementById('cfg-shopee');
+    if (s) s.value = sh;
+  }
+}
+
+function saveGlobalConfig() {
+  const k = document.getElementById('cfg-siaa-api-key');
+  if (k) localStorage.setItem('SIAA_INTERNAL_API_KEY', k.value.trim());
+  const gem = document.getElementById('cfg-gemini');
+  if (gem) localStorage.setItem('cfg_gemini', gem.value);
+  const sh = document.getElementById('cfg-shopee');
+  if (sh) localStorage.setItem('cfg_shopee', sh.value);
+  showToast('Configurações guardadas neste browser');
+}
+
+async function execDownload() {
+  const urlEl = document.getElementById('dl-url');
+  const url = (urlEl && urlEl.value || '').trim();
+  if (!url) { showToast('Cole o URL do vídeo'); return; }
+  try {
+    const res = await siaaFetch('/api/download', {
+      method: 'POST',
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 || res.status === 403) {
+      showToast('Configure a chave API em Ajustes (igual ao .env)');
+      return;
+    }
+    if (data.status === 'success') {
+      showToast('Download concluído');
+      const box = document.getElementById('dl-result');
+      if (box) box.style.display = 'block';
+    } else {
+      showToast(data.message || 'Falha no download');
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('Erro de rede');
+  }
+}
+
+async function execCopy() {
+  const desc = (document.getElementById('copy-desc') || {}).value || '';
+  const style = (document.getElementById('copy-style') || {}).value || 'Padrao';
+  try {
+    const res = await siaaFetch('/api/generate-copy', {
+      method: 'POST',
+      body: JSON.stringify({ description: desc, style })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 || res.status === 403) {
+      showToast('Configure a chave API em Ajustes');
+      return;
+    }
+    if (data.status === 'success' && data.hooks) {
+      const out = document.getElementById('copy-output');
+      if (out) {
+        out.style.display = 'block';
+        out.innerHTML = '<pre style="white-space:pre-wrap;font-size:0.8rem;color:var(--text);">' +
+          JSON.stringify(data.hooks, null, 2).replace(/</g, '&lt;') + '</pre>';
+      }
+      showToast('Copy gerada');
+    } else {
+      showToast(data.message || 'Erro ao gerar copy');
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('Erro de rede');
+  }
+}
+
+function goNav(id, el) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item, .nav-btn').forEach(i => i.classList.remove('active'));
+    if(el) el.classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+async function loadFromAPI() {
+    try {
+        const res = await siaaFetch('/api/achados');
+        if (res.status === 401 || res.status === 403) {
+          showToast('Defina SIAA_INTERNAL_API_KEY em Ajustes');
+          return;
+        }
+        const data = await res.json();
+        state.achados = data.map(a => ({
+            id: a.id,
+            nome: a.texto_original || "Sem título",
+            status: a.status.toLowerCase() === 'pending' ? 'ideia' : a.status.toLowerCase(),
+            cat: a.categoria || "Geral",
+            data: "Recente",
+            emoji: "📦"
+        }));
+        renderKanban();
+    } catch(e) { console.error("Erro ao carregar da API", e); }
+}
+
+function renderKanban() {
+  const cols = {
+    ideia: document.getElementById('col-ideia'),
+    editando: document.getElementById('col-editando'),
+    pronto: document.getElementById('col-pronto'),
+    postado: document.getElementById('col-postado')
+  };
+
+  Object.values(cols).forEach(col => {
+    const header = col.querySelector('.col-header');
+    col.innerHTML = '';
+    col.appendChild(header);
+  });
+
+  state.achados.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'kanban-card';
+    card.innerHTML = `
+      <span style="font-size:0.6rem; font-weight:800; color:var(--accent)">${escapeHtml(a.cat)}</span>
+      <div style="font-size:0.85rem; font-weight:700; margin:5px 0;">${escapeHtml(a.emoji)} ${escapeHtml(a.nome.substring(0, 40))}...</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:var(--dim);">
+        <span>${a.data}</span>
+        <span onclick="showToast('Abrindo Editor...')" style="cursor:pointer; color:var(--blue)">EDITAR ➔</span>
+      </div>
+    `;
+    if (cols[a.status]) cols[a.status].appendChild(card);
+  });
+
+  Object.keys(cols).forEach(key => {
+    const count = state.achados.filter(a => a.status === key).length;
+    const countEl = document.getElementById('cnt-' + key);
+    if(countEl) countEl.textContent = count;
+  });
+}
+
+async function init() {
+  loadLocalConfig();
+  loadFromAPI();
+  loadAccessInfo();
+  setInterval(loadFromAPI, 10000);
+}
+
+async function loadAccessInfo() {
+    try {
+        const res = await siaaFetch('/api/access-info');
+        if (res.status === 401 || res.status === 403) {
+          const render = document.getElementById('access-info-render');
+          if (render) render.innerHTML = '<p style="color:var(--gold)">Configure a chave API em Ajustes para ver o QR na rede local.</p>';
+          return;
+        }
+        const data = await res.json();
+        const render = document.getElementById('access-info-render');
+        
+        if(data.status === 'success') {
+            const safeUrl = String(data.mobile_url || '').replace(/"/g, '&quot;');
+            const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + encodeURIComponent(data.mobile_url || '');
+            render.innerHTML = `
+                <div style="display:flex; gap:15px; align-items:center; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="background:white; padding:5px; border-radius:8px; width:110px; height:110px;">
+                        <img src="${qrUrl}" alt="QR" style="width:100%;">
+                    </div>
+                    <div style="flex:1">
+                        <p style="color:var(--accent); font-weight:800; font-size:0.7rem; text-transform:uppercase; margin-bottom:5px;">🚀 URL Rede Local</p>
+                        <code style="background:rgba(0,0,0,0.4); padding:6px 10px; border-radius:6px; display:block; font-size:0.8rem; border:1px solid var(--border2); color:white; margin-bottom:8px;">${safeUrl.replace(/</g, '&lt;')}</code>
+                        <p style="font-size:0.75rem; color:var(--muted);">Escaneie o QR Code com seu celular para abrir o SIAA instantaneamente.</p>
+                    </div>
+                </div>
+            `;
+        }
+    } catch(e) { console.error("Erro ao carregar info de rede", e); }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

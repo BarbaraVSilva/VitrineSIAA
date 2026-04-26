@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "MiningItem": {
+      "title": "MiningItem",
+      "description": "Item minerado por scrapers pendente de triagem",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "price": { "type": "string" },
+        "image": { "type": "string" },
+        "source": { "type": "string" },
+        "rawLink": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "rejected", "approved"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "price", "image", "source", "status", "timestamp"]
+    },
+    "ApprovedItem": {
+      "title": "ApprovedItem",
+      "description": "Item aprovado para vitrine e publicação",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "price": { "type": "string" },
+        "image": { "type": "string" },
+        "hook": { "type": "string" },
+        "affiliateLink": { "type": "string" },
+        "approvedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "price", "image", "hook", "affiliateLink", "approvedAt"]
+    },
+    "ProcessingTask": {
+      "title": "ProcessingTask",
+      "description": "Tarefa de processamento de vídeo no Automation Engine",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "title": { "type": "string" },
+        "image": { "type": "string" },
+        "step": { "type": "string" },
+        "progress": { "type": "number" },
+        "status": { "type": "string", "enum": ["queued", "processing", "completed", "failed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "itemId", "title", "image", "step", "progress", "status", "createdAt"]
+    },
+    "ScheduledPost": {
+      "title": "ScheduledPost",
+      "description": "Postagem agendada para redes sociais",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "title": { "type": "string" },
+        "platform": { "type": "string" },
+        "time": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "posted", "failed"] }
+      },
+      "required": ["id", "itemId", "title", "platform", "time", "status"]
+    },
+    "Analytics": {
+      "title": "Analytics",
+      "description": "Dados de performance da plataforma",
+      "type": "object",
+      "properties": {
+        "clicks": { "type": "number" },
+        "conversions": { "type": "number" },
+        "revenue": { "type": "number" },
+        "topCategories": { "type": "array" },
+        "dailyStats": { "type": "array" }
+      },
+      "required": ["clicks", "conversions", "revenue"]
+    },
+    "BotConfig": {
+      "title": "BotConfig",
+      "description": "Configuração do bot do Telegram",
+      "type": "object",
+      "properties": {
+        "token": { "type": "string" },
+        "channel": { "type": "string" },
+        "group": { "type": "string" },
+        "openRouterKey": { "type": "string" },
+        "lastConnected": { "type": "string" },
+        "autoPosting": { "type": "boolean" },
+        "interval": { "type": "string" }
+      }
+    },
+    "ContentTemplate": {
+      "title": "ContentTemplate",
+      "description": "Templates pré-definidos para postagens",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "content": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/mining": {
+      "schema": "MiningItem",
+      "description": "Coleção de itens minerados"
+    },
+    "/vitrine": {
+      "schema": "ApprovedItem",
+      "description": "Coleção de itens aprovados para a vitrine"
+    },
+    "/processing": {
+      "schema": "ProcessingTask",
+      "description": "Fila de processamento de vídeos"
+    },
+    "/schedule": {
+      "schema": "ScheduledPost",
+      "description": "Agendamento de postagens"
+    },
+    "/analytics/global": {
+      "schema": "Analytics",
+      "description": "Documento único de analytics global"
+    },
+    "/bots/{userId}": {
+      "schema": "BotConfig",
+      "description": "Configuração do bot por usuário"
+    },
+    "/templates": {
+      "schema": "ContentTemplate",
+      "description": "Biblioteca de templates de copy"
+    }
+  }
+}
